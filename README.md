@@ -1,5 +1,5 @@
-# duckbot
-Jupyter notebooks for duckweed science with Jubilee 
-Hi from Orlando
-Sam typed this
+# Duckbot: Jubilee for Science
+This repository hosts files to build and operate a Duckbot, aka a Jubilee outfitted for use by plant biologists.
+
+Documentation to come.
 
