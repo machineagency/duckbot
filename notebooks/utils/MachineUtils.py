@@ -55,7 +55,7 @@ class MachineCommunication:
         cmd = f"G0 {x_cmd} {y_cmd} {z_cmd} {f_cmd}"
         self.send(cmd)
         
-    def move(self, dx = 0, dy = 0, dz = 0, s = 6000):
+    def move(self, dx = 0, dy = 0, dz = 0, de = 0, s = 6000):
         """Move relative to the current position
 
         Parameters
@@ -73,10 +73,12 @@ class MachineCommunication:
         dx = "{0:.2f}".format(dx)
         dy = "{0:.2f}".format(dy)
         dz = "{0:.2f}".format(dz)
+        de = "{0:.2f}".format(de)
         s = "{0:.2f}".format(s)
         
+        
         self.setRelative()
-        cmd = f"G1 X{dx} Y{dy} Z{dz} F{s}"
+        cmd = f"G1 X{dx} Y{dy} Z{dz} E{de} F{s}"
         self.send(cmd)
         self.setAbsolute() # restore absolute positioning
         
@@ -93,7 +95,13 @@ class MachineCommunication:
         
         
     def setRelative(self):
-        """Set machine to use relative positioning"""
+        """Set machine to use relative positioning
+        This does NOT set the extruder to relative mode"""
+        cmd = "G91"
+        self.send(cmd)
+    
+    def setExtruderRelative(self):
+        """Set extruder axis to use relative positioning"""
         cmd = "G91"
         self.send(cmd)
         
@@ -128,6 +136,47 @@ class MachineCommunication:
         """Home all axes"""
         cmd = "G28"
         self.send(cmd)
+    
+    def getPosition(self):
+        """Get the current position
+        Returns a dictionary with X/Y/Z/U/E keys"""
+        cmd = "M114"
+        self.send(cmd)
+        resp = self.ser.readline().decode('UTF-8') # read the response
+        
+        positions = {}
+        keyword = " Count " # this is the keyword hosts like e.g. pronterface search for to track position
+        keyword_idx = resp.find(keyword)
+        if keyword_idx > -1:
+            resp = resp[:keyword_idx]
+            position_elements = resp.split(' ')
+            for e in position_elements:
+                axis, pos = e.split(':', 2)
+                positions[axis] = pos
+                
+                
+            
+        
+        self.ser.reset_input_buffer() # flush the buffer
+        
+        return positions
+        
+    # ***************MACROS***************
+    def tool_lock(self):
+        """Runs Jubilee tool lock macro
+        Assumes tool_lock.g macro exists"""
+        macro_file = "0:/macros/tool_lock.g"
+        cmd = f"M98 P{macro_file}"
+        self.send(cmd)
+        
+    def tool_unlock(self):
+        """Runs Jubilee tool unlock macro
+        Assumes tool_unlock.g macro exists"""
+        macro_file = "0:/macros/tool_unlock.g"
+        cmd = f"M98 P{macro_file}"
+        self.send(cmd)
+        
+    
         
         
         
