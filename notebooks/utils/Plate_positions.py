@@ -1,13 +1,25 @@
+#Absolute values (07/19/22)
+#Plate 1 is defined her as the one kitty corner from the power supply.
+#Plate 1, well A1 - X - 32.0, Y - 273. 
+#Distance between columns (X - 19)
+#Distance between rows (Y - 19)
+#Distance between plate positions A1 in same column (Y - (270 -173) = 97
+#Distance between plate positions A1 in different column (X - (166-25) = 141)
+#Offset for the 50 ml Syringe tool (X minus 4 , Y minus 5 , Z is -50 for the bed offset for the smaller syringe tool).  #Note that this already incorporates legacy offsets built into duet for the smaller syringe tool. 
+
+
+
+
 #Note that these dimensions have been established according to the specifications of the specific bedplate and 24 well plates we were using. 
 
 bedplate_z_offest = 10
-plate_column_offset = 100
-plate_row_offset = 65
+plate_column_offset = 141
+plate_row_offset = 97
 
-well_column_offset = 17
-well_row_offset = 17
+well_column_offset = 19
+well_row_offset = 19
 
-plate_start_position = {"x" : 10, "y" : 275}#The way we have the bedplate set up is basically upside down relative to what the Duetboard is expecting. So instead of calculating our y up from zero we go down from 300. 
+plate_start_position = {"x" : 32, "y" : 273}#The way we have the bedplate set up is basically upside down relative to what the Duetboard is expecting. So instead of calculating our y up from zero we go down from 300. 
 
 plates = [{"plate_id": 1, "col": 0, "row": 1},
           {"plate_id": 2, "col": 0, "row": 2},
