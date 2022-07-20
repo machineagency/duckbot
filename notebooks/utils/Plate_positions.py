@@ -19,7 +19,7 @@ plate_row_offset = 97
 well_column_offset = 19
 well_row_offset = 19
 
-plate_start_position = {"x" : 32, "y" : 273}#The way we have the bedplate set up is basically upside down relative to what the Duetboard is expecting. So instead of calculating our y up from zero we go down from 300. 
+plate_start_position = {"x" : 27, "y" : 267}#The way we have the bedplate set up is basically upside down relative to what the Duetboard is expecting. So instead of calculating our y up from zero we go down from 300. 
 
 plates = [{"plate_id": 1, "col": 0, "row": 1},
           {"plate_id": 2, "col": 0, "row": 2},

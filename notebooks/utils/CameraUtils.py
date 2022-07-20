@@ -36,7 +36,8 @@ def getFrame(resolution = [1200, 1200]):
         output = np.empty((resolution[1], resolution[0], 3), dtype=np.uint8)
         camera.capture(output, 'rgb', use_video_port = True)
         tpose = np.transpose(output, axes = (1,0,2))
-        mtx, dist = load_coefficients('calibration_checkerboard.yml')
+        #N.B. opencv doesn't like opening files in different directories :/
+        mtx, dist = load_coefficients('./calibration/calibration_checkerboard.yml') 
         undistorted = cv2.undistort(tpose, mtx, dist, None, mtx)
         return undistorted
 

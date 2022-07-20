@@ -55,7 +55,7 @@ class MachineCommunication:
         cmd = f"G0 {x_cmd} {y_cmd} {z_cmd} {f_cmd}"
         self.send(cmd)
         
-    def move(self, dx = 0, dy = 0, dz = 0, de = 0, s = 6000):
+    def move(self, dx = None, dy = None, dz = None, de = None, s = 6000):
         """Move relative to the current position
 
         Parameters
@@ -70,15 +70,27 @@ class MachineCommunication:
         Nothing
 
         """
-        dx = "{0:.2f}".format(dx)
-        dy = "{0:.2f}".format(dy)
-        dz = "{0:.2f}".format(dz)
-        de = "{0:.2f}".format(de)
+        dx = "{0:.2f}".format(dx) if dx is not None else None
+        dy = "{0:.2f}".format(dy) if dy is not None else None
+        dz = "{0:.2f}".format(dz) if dz is not None else None
+        de = "{0:.2f}".format(de) if de is not None else None
         s = "{0:.2f}".format(s)
+        x_cmd = y_cmd = z_cmd = e_cmd = f_cmd = ''
+        if dx is not None:
+            x_cmd = f'X{dx}'
+        if dy is not None:
+            y_cmd = f'Y{dy}'
+        if dz is not None:
+            z_cmd = f'Z{dz}'
+        if de is not None:
+            e_cmd = f'E{de}'
+        if s is not None:
+            f_cmd = f'F{s}'
         
         
         self.setRelative()
-        cmd = f"G1 X{dx} Y{dy} Z{dz} E{de} F{s}"
+        cmd = f"G1 {x_cmd} {y_cmd} {z_cmd} {e_cmd} {f_cmd}"
+        print(cmd)
         self.send(cmd)
         self.setAbsolute() # restore absolute positioning
         
