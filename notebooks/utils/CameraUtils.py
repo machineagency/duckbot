@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 import numpy as np
-import picamera
+import picamera #Note that this can only be installed on raspbery pi. 
 import time
 
 
