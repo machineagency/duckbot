@@ -28,6 +28,7 @@ def getCameraIndices():
     return arr
 
 def getFrame(resolution = [1200, 1200]):
+    print('CHANGE')
     with picamera.PiCamera() as camera:
         camera.resolution = (1200, 1200)
         camera.framerate = 24
@@ -37,7 +38,9 @@ def getFrame(resolution = [1200, 1200]):
         camera.capture(output, 'rgb', use_video_port = True)
         tpose = np.transpose(output, axes = (1,0,2))
         #N.B. opencv doesn't like opening files in different directories :/
-        mtx, dist = load_coefficients('./calibration/calibration_checkerboard.yml') 
+        print('lets read in yml')
+        mtx, dist = load_coefficients('./calibration_checkerboard.yml') 
+        print('got yml, lets undistort')
         undistorted = cv2.undistort(tpose, mtx, dist, None, mtx)
         return undistorted
 
