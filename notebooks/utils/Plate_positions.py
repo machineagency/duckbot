@@ -78,11 +78,15 @@ for p in plates:
     plate_dict = {}
     start_x = plate_start_position["x"] + (p["col"] * plate_column_offset)
     start_y = plate_start_position["y"] - (p["row"] * plate_row_offset)
+    platewells =[]
     for i, well in enumerate(wells_in_plate):
-        well["x"] = start_x + (well["col"] * well_column_offset)
-        well["y"] = start_y - (well["row"] * well_row_offset)
+        well_dict ={}
+        well_dict["well_id"] = well['well_id']
+        well_dict["x"] = start_x + (well["col"] * well_column_offset)
+        well_dict["y"] = start_y - (well["row"] * well_row_offset)
+        platewells.append(well_dict)
     plate_dict["plate"] = p['plate_id']
-    plate_dict["well_dict"] = wells_in_plate
+    plate_dict["well_dict"] = platewells
     whole_bedplate_positions.append(plate_dict)
 
  # bedplate_df = pd.DataFrame(whole_bedplate_positions) - Future work. To improve elegance create a dataframe and use locate to pull out wells rather than iterating through a list of nested dictionaries. 
