@@ -94,6 +94,28 @@ class MachineCommunication:
         self.send(cmd)
         self.setAbsolute() # restore absolute positioning
         
+    def dwell(self, t, millis=True):
+        """Pause the machine for a period of time.
+
+        Parameters
+        ----------
+        t: time to pause, in milliseconds by default
+        millis (optional): boolean, set to false to use seconds. default unit is milliseconds.
+        dz: change in z position, in whatever units have been set (default mm)
+
+        Returns
+        -------
+        Nothing
+
+        """
+        
+        param = 'P' if millis else 'S'
+        cmd = f"G4 {param}{t}"
+        
+        self.send(cmd)
+        
+        
+        
     def toolChange(self, toolIdx):
         """Change to specified tool"""
         cmd = f'T{toolIdx}'

@@ -17,7 +17,7 @@ plate_row_offset = 97
 well_column_offset = 19
 well_row_offset = 19
 
-plate_start_position = {"x" : 27, "y" : 267}
+plate_start_position = {"x" : 29, "y" : 272}
 #Plate 1 is defined her as the one diagonally opposite from the power supply.
 #The way we have the bedplate set up is basically upside down relative to what the Duetboard is expecting. So instead of calculating our y up from zero we go down from 300. 
 
