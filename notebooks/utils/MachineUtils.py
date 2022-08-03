@@ -89,6 +89,7 @@ class MachineCommunication:
         
         
         self.setRelative()
+        self.setExtruderRelative()
         cmd = f"G1 {x_cmd} {y_cmd} {z_cmd} {e_cmd} {f_cmd}"
         print(cmd)
         self.send(cmd)

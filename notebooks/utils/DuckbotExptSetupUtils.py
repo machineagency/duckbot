@@ -42,7 +42,7 @@ def dispense_to_wells(m, well_coords, dispense_offset, dispenses_per_syringe_fil
         m.moveTo(z=z_dict["aspirate"])
         print("moved to height for aspiration")
        # m.move(de=dispense_offset * dispenses_per_syringe_fill)
-        m.move(de=dispense_offset * len(wells))
+        m.move(de=dispense_offset * len(wells), s=1000)
         m.moveTo(z = z_dict["zero"])
         print("Moved to Z = zero")
         m.moveTo(x=wells[0][0], y = wells[0][1], z = z_dict["dispense"])
@@ -52,6 +52,6 @@ def dispense_to_wells(m, well_coords, dispense_offset, dispenses_per_syringe_fil
             print(f"X = {well[0]}")
             print(f"Y = {well[1]}")     
             m.moveTo(x=well[0], y=well[1])
-            m.move(de=-dispense_offset)
+            m.move(de=-dispense_offset, s=1000)
         
 
