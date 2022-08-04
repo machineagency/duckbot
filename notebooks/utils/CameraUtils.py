@@ -32,14 +32,12 @@ def getFrame(resolution = [1200, 1200]):
         camera.resolution = (1200, 1200)
         camera.framerate = 24
         time.sleep(2)
-        print("... camera connection established")
+        # print("... camera connection established")
         output = np.empty((resolution[1], resolution[0], 3), dtype=np.uint8)
         camera.capture(output, 'rgb', use_video_port = True)
         tpose = np.transpose(output, axes = (1,0,2))
         #N.B. opencv doesn't like opening files in different directories :/
-        print('lets read in yml')
         mtx, dist = load_coefficients('/home/pi/duckbot/notebooks/utils/calibration_checkerboard.yml') 
-        print('got yml, lets undistort')
         undistorted = cv2.undistort(tpose, mtx, dist, None, mtx)
         return undistorted
 
