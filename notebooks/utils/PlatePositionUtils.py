@@ -45,7 +45,7 @@ wells_in_plate= [{"well_id" : "A1", "col": 0, "row": 0}                         
                  {"well_id" : "A4", "col": 3, "row": 0},
                  {"well_id" : "A5", "col": 4, "row": 0},
                  {"well_id" : "A6", "col": 5, "row": 0},
-                 {"well_id" : "B1", "col": 0, "row": 0},
+                 {"well_id" : "B1", "col": 0, "row": 1},
                  {"well_id" : "B2", "col": 1, "row": 1},
                  {"well_id" : "B3", "col": 2, "row": 1},
                  {"well_id" : "B4", "col": 3, "row": 1},
