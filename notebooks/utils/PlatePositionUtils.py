@@ -1,3 +1,13 @@
+
+import os
+import json
+import pandas as pd
+
+
+
+#-----------------
+# Absolute positions
+
 #Absolute values (07/19/22)
 #Plate 1, well A1 - X - 32.0, Y - 273. 
 #Distance between columns (X - 19)
@@ -56,6 +66,9 @@ wells_in_plate= [{"well_id" : "A1", "col": 0, "row": 0}                         
 
 
 # ----------
+#FETCHING WELL COORDINATES
+
+
 # Method to return an updated version of the wells_in_plate dictionary defined above
 # with 'x' and 'y' values added into each well dictionary, calculated for the specific plate. 
 
@@ -67,6 +80,21 @@ def fetch_plate_wellpostions(plate_num):
         well["x"] = start_x + (well["col"] * well_column_offset)
         well["y"] = start_y - (well["row"] * well_row_offset)
     return(wells_in_plate)
+
+
+def add_well_coords_to_df_from_file(expt_setup_dir, expt_setup_filename):
+    os.chdir(expt_setup_dir)
+    with open(expt_setup_filename) as datafile:
+        expt_data = json.load(datafile)
+    sample_data = expt_data["sample_info"]
+    df = pd.DataFrame(sample_data)
+    unique_plates = list(df.Plate.unique())
+    def pull_last_number(n):
+        return n[-1:]
+    plates_to_process = list(map(pull_last_number, unique_plates))
+    for pl in plates_to_process:
+        add_well_coords_to_df(int(pl), df)
+    return df
 
 
 # ----------
@@ -115,3 +143,20 @@ def add_well_coords_to_df(plate_num, df):
             if row['Plate'] == f'Plate_{plate_num}' and row['Well'] == well['well_id']:
                 df.loc[index, 'x'] = well['x']
                 df.loc[index, 'y'] = well['y']
+                
+                
+def pull_list_of_well_coord_dicts_by_dfcolumn(df, column_to_group_by_string):    
+    grouped_df = df.groupby([column_to_group_by_string]) #Returns a list of tuples with [0] being the group key and [1] the dataframe
+    list_of_dicts = []
+
+    for group in grouped_df:
+        well_coords = []
+        for index, row in group[1].iterrows():
+            this_well = []
+            this_well.append(row['x'])
+            this_well.append(row['y'])
+            well_coords.append(this_well)
+        list_of_dicts.append({column_to_group_by_string : group[0], 'well-coords' : well_coords})
+        
+    return list_of_dicts
+  
