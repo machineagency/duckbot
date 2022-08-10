@@ -58,7 +58,7 @@ def dispense_to_wells(m, well_coords, dispense_offset, dispenses_per_syringe_fil
         m.moveTo(x=media_reservoir["x"], y=media_reservoir['y'])
         print("Move to reservoir position")
         m.move(de=-(dispense_offset * 2), s=1000)
-        print("Empty excess media from syringe)
+        print("Empty excess media from syringe")
         
         
 

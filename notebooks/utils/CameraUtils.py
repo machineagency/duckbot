@@ -98,12 +98,12 @@ def showFrame(frame, grid=False, save=False):
 def saveFrame(frame, path):
     cv2.imwrite(path, frame)
     
-def selectPoint(frame):
+def selectPoint(frame, num_pts=1):
     plt.imshow(frame)
     plt.title('frame capture')
-    pts = plt.ginput(1)[0] #number of clicks
+    pts = plt.ginput(num_pts, timeout=180) #number of clicks
     print(pts)
-    plt.close()
+    # plt.close()
     
     return pts
 
