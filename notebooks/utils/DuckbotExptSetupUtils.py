@@ -53,6 +53,7 @@ def dispense_to_wells(m, well_coords, dispense_offset, dispenses_per_syringe_fil
             print(f"Y = {well[1]}")     
             m.moveTo(x=well[0], y=well[1])
             m.move(de=-dispense_offset, s=1000)
+            m.dwell(t=500) #should be a 0.5 second pause to avoid drips between wells. 
         m.moveTo(z = z_dict["zero"])
         print("Move to Z = zero")
         m.moveTo(x=media_reservoir["x"], y=media_reservoir['y'])
