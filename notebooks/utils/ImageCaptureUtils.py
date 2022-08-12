@@ -28,6 +28,8 @@ def pull_plates_to_image(expt_setup_dir, expt_setup_filename):
     return plates_to_image
 
 def image_plates(m, df_with_well_coords, output_data_dir, expt_name):
+    images = []
+    
     for index, row in df_with_well_coords.iterrows():
         plate = row['Plate']
         well = row['Well']
@@ -38,4 +40,5 @@ def image_plates(m, df_with_well_coords, output_data_dir, expt_name):
         m.dwell(500) #dwell .75 seconds
         f = cu.getFrame()
         cv2.imwrite(f'{output_data_dir}/{expt_name}_{plate}_well{well}_{date.today()}.jpg', f)
+        images.append(f)
         time.sleep(0.1)
