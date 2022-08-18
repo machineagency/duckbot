@@ -43,3 +43,29 @@ def image_plates(m, df_with_well_coords, output_data_dir, expt_name):
         cv2.imwrite(f'{output_data_dir}/{expt_name}_{plate}_well{well}_{date.today()}.jpg', f_rgb)
         images.append(f)
         time.sleep(0.1)
+        
+        
+def create_plate_image_grid(df_with_well_coords, output_data_dir):
+    plates = list(np.unique(df_with_well_coords['Plate']))
+    plates = [int(x[-1]) for x in plates]
+    c_num = 6 #How many columns per plate
+    r_num = 4 #How many rows per plate
+    row_dict ={"A" : 1, "B" :2, "C": 3, "D": 4, "E" : 5, "F" : 6}
+    for p in plates:
+    fig, axs = plt.subplots(r_num, c_num, figsize=(15, 10))
+    plt.suptitle(f"Images captured from Plate {p}", fontsize = 16)
+    os.chdir(output_data_dir)
+    for file in os.listdir(output_data_dir):
+        if ".jpg" and date.today() in file:
+            well = re.search("well..", file).group(0)[-2:] #Find the pattern, use 'group(0)'' to pull string from match object and then slice to get desired part
+            plate = re.search("Plate\_.",file).group(0)[-1]
+            well = well[-2:]
+            row = row_dict[well[0]] - 1 #Pull column number from dictionary above. Adjust to start at 0 instead of 1
+            column = int(well[1]) - 1
+            if plate == str(p):
+                img = mpimg.imread(file)
+                plt.imshow(img)
+#                 plt.axis('off')
+                axs[row, int(column)].axis('off')
+                axs[row, int(column)].imshow(img)
+                axs[row, int(column)].set_title(f"Plate{p}_{well}", fontsize = 8)
