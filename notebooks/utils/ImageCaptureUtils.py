@@ -39,6 +39,7 @@ def image_plates(m, df_with_well_coords, output_data_dir, expt_name):
         m.moveTo(x=well_x, y=well_y, z=10)
         m.dwell(500) #dwell .75 seconds
         f = cu.getFrame()
-        cv2.imwrite(f'{output_data_dir}/{expt_name}_{plate}_well{well}_{date.today()}.jpg', f)
+        f_rgb = cv2.cvtColor(f, cv2.COLOR_BGR2GRAY)
+        cv2.imwrite(f'{output_data_dir}/{expt_name}_{plate}_well{well}_{date.today()}.jpg', f_rgb)
         images.append(f)
         time.sleep(0.1)
