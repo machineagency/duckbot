@@ -96,7 +96,7 @@ def showFrame(frame, grid=False, save=False):
 
     
 def saveFrame(frame, path):
-    cv2.imwrite(path, frame)
+    cv2.imwrite(path, cv2.cvtColor(frame, cv2.COLOR_RGB2BGR))
     
 def selectPoint(frame, num_pts=1):
     plt.imshow(frame)
