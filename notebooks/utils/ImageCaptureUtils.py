@@ -71,7 +71,7 @@ def create_plate_image_grid(df_with_well_coords, output_data_dir):
                 column = int(well[1]) - 1
                 if plate == str(p):
                     img = mpimg.imread(file)
-                    plt.imshow(img)
+#                     plt.imshow(img)
     #                 plt.axis('off')
                     axs[row, int(column)].axis('off')
                     axs[row, int(column)].imshow(img)
