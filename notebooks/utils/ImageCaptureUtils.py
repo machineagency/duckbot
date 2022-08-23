@@ -58,9 +58,14 @@ def create_plate_image_grid(df_with_well_coords, output_data_dir):
     c_num = 6 #How many columns per plate
     r_num = 4 #How many rows per plate
     row_dict ={"A" : 1, "B" :2, "C": 3, "D": 4, "E" : 5, "F" : 6}
+    column_list = list(np.arange(0, c_num))
+    row_list = list(np.arange(0,r_num))
     for p in plates:
         fig, axs = plt.subplots(r_num, c_num, figsize=(15, 10))
         plt.suptitle(f"Images captured from Plate {p}", fontsize = 16)
+        for c in column_list:
+            for r in row_list:
+                axs[r, c].axis('off')
         os.chdir(output_data_dir)
         for file in os.listdir(output_data_dir):
             if ".jpg" and str(date.today()) in file:
@@ -76,3 +81,10 @@ def create_plate_image_grid(df_with_well_coords, output_data_dir):
                     axs[row, int(column)].axis('off')
                     axs[row, int(column)].imshow(img)
                     axs[row, int(column)].set_title(f"Plate{p}_{well}", fontsize = 8)
+                
+def add_input_to_json(notes, key, expt_setup_filename):
+    with open(expt_setup_filename) as datafile:
+        expt_data = json.load(datafile)
+        expt_data[key] = notes
+    with open(expt_setup_filename, 'w') as f:
+        json.dump(expt_data, f)

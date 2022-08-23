@@ -1,4 +1,9 @@
- 
+import matplotlib
+import matplotlib.patches as mpatches
+import numpy as np
+from matplotlib import pyplot as plt
+
+
 def assign_plates_and_wells(master_expt_list):
     plates = [1,2,3,4,5]
     rows = ["A","B","C","D"]
@@ -61,5 +66,50 @@ def dispense_to_wells(m, well_coords, dispense_offset, dispenses_per_syringe_fil
         m.move(de=-(dispense_offset * 2), s=1000)
         print("Empty excess media from syringe")
         
-        
+def visualize_plate_set_up(df_with_well_coords):
+    
+    #Establish a number of variables to be called in the matplotlib function below
+    plates = list(np.unique(df_with_well_coords['Plate']))
+    media_list = list(np.unique(df_with_well_coords['media']))
+    c_num = 6 #How many columns per plate
+    r_num = 4 #How many rows per plate
+    column_list = list(np.arange(0, c_num))
+    row_list = list(np.arange(0,r_num))
+
+    date_today = "2022-08-09"
+    row_dict ={"A" : 1, "B" :2, "C": 3, "D": 4, "E" : 5, "F" : 6}
+    media_color_opts = ['lightcoral','lightblue','lightgreen','thistle','lightyellow','lightpink']
+    media_color_dict = {}
+    n = 0
+    for m in media_list:
+        media_color_dict[m] = media_color_opts[n]
+        n = n + 1
+    
+    #Set up visualization using matplotlib
+    for p in plates:
+        fig, axs = plt.subplots(r_num, c_num, figsize=(12, 8))
+        plt.suptitle(f"Set up plan for {p}", fontsize = 16)
+        plate_df = df_with_well_coords.loc[df_with_well_coords['Plate'] == p]
+        for c in column_list:
+            for r in row_list:
+                axs[r, c].set_xticks([])
+                axs[r, c].set_yticks([])
+        leg_patches = []
+        for m in media_color_dict:
+            m_patch = mpatches.Patch(color= media_color_dict[m])
+            leg_patches.append(m_patch)
+            media_df = plate_df.loc[plate_df['media'] == m]
+            c = media_color_dict[m]
+            for index, row in media_df.iterrows():
+                well = row['Well'] #Find the pattern, use 'group(0)'' to pull string from match object and then slice to get desired part
+                duckweed = row['genotype']
+                row = row_dict[well[0]] - 1 #Pull column number from dictionary above. Adjust to start at 0 instead of 1
+                column = int(well[1]) - 1
+                ax_n = axs[row, int(column)]
+                circle1 = plt.Circle((0.5, 0.5), 0.4, color=c)
+                ax_n.add_patch(circle1)
+                ax_n.text(0.5, 0.5, duckweed, horizontalalignment='center', verticalalignment='center', transform=ax_n.transAxes, weight='bold')
+                ax_n.text(0.1, 0.9, well, horizontalalignment='center', verticalalignment='center', transform=ax_n.transAxes, weight='bold')
+        fig.legend(handles = leg_patches, labels = media_list, loc = 'upper left')
+
 
