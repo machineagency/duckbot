@@ -82,9 +82,3 @@ def create_plate_image_grid(df_with_well_coords, output_data_dir):
                     axs[row, int(column)].imshow(img)
                     axs[row, int(column)].set_title(f"Plate{p}_{well}", fontsize = 8)
                 
-def add_input_to_json(notes, key, expt_setup_filename):
-    with open(expt_setup_filename) as datafile:
-        expt_data = json.load(datafile)
-        expt_data[key] = notes
-    with open(expt_setup_filename, 'w') as f:
-        json.dump(expt_data, f)

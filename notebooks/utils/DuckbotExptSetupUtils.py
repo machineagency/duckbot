@@ -40,18 +40,19 @@ def chunk_list(well_list, n):
 def dispense_to_wells(m, well_coords, dispense_offset, dispenses_per_syringe_fill, media_reservoir, z_dict): 
     dispense_chunks = list(chunk_list(well_coords, int(dispenses_per_syringe_fill)))
     for wells in dispense_chunks:
+        print("Dispensing media, please wait")
         m.moveTo(z = z_dict["zero"])
-        print("Move to Z = zero")
+#         print("Move to Z = zero")
         m.moveTo(x=media_reservoir["x"], y=media_reservoir['y'])
-        print("Move to reservoir position")
+#         print("Move to reservoir position")
         m.moveTo(z=z_dict["aspirate"])
-        print("moved to height for aspiration")
+#         print("moved to height for aspiration")
        # m.move(de=dispense_offset * dispenses_per_syringe_fill)
         m.move(de=dispense_offset * (len(wells) + 2), s=1000)
         m.moveTo(z = z_dict["zero"])
-        print("Moved to Z = zero")
+#         print("Moved to Z = zero")
         m.moveTo(x=wells[0][0], y = wells[0][1], z = z_dict["dispense"])
-        print("Hovering over the first well to dispense into")
+#         print("Hovering over the first well to dispense into")
         for well in wells:
             print("Prepare to dispense")
             print(f"X = {well[0]}")
@@ -60,11 +61,12 @@ def dispense_to_wells(m, well_coords, dispense_offset, dispenses_per_syringe_fil
             m.move(de=-dispense_offset, s=1000)
             m.dwell(t=500) #should be a 0.5 second pause to avoid drips between wells. 
         m.moveTo(z = z_dict["zero"])
-        print("Move to Z = zero")
+#         print("Move to Z = zero")
         m.moveTo(x=media_reservoir["x"], y=media_reservoir['y'])
-        print("Move to reservoir position")
+#         print("Move to reservoir position")
         m.move(de=-(dispense_offset * 2), s=1000)
-        print("Empty excess media from syringe")
+#         print("Empty excess media from syringe")
+      print("Media dispensing completed")
         
 def visualize_plate_set_up(df_with_well_coords):
     
@@ -113,3 +115,9 @@ def visualize_plate_set_up(df_with_well_coords):
         fig.legend(handles = leg_patches, labels = media_list, loc = 'upper left')
 
 
+def add_input_to_json(notes, key, expt_setup_filepath):
+    with open(expt_setup_filepath) as datafile:
+        expt_data = json.load(datafile)
+        expt_data[key] = notes
+    with open(expt_setup_filename, 'w') as f:
+        json.dump(expt_data, f)
