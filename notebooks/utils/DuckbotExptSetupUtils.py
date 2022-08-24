@@ -6,7 +6,7 @@ import random
 from plantcv import plantcv as pcv
 
 import utils.PlatePositionUtils as pp
-from utils.CameraUtils import *
+# from utils.CameraUtils import *
 
 
 
