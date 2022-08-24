@@ -96,6 +96,23 @@ def add_well_coords_to_df_from_file(expt_setup_dir, expt_setup_filename):
         add_well_coords_to_df(int(pl), df)
     return df
 
+def add_well_coords_to_df_from_file(expt_setup_dir, expt_setup_filename):
+    os.chdir(expt_setup_dir)
+    with open(expt_setup_filename) as datafile:
+        expt_data = json.load(datafile)
+    sample_data_dict = expt_data["sample_info"]
+    return add_well_coords_to_df_from_sample_data_dict(sample_data_dict)
+
+def add_well_coords_to_df_from_sample_data_dict(sample_data_dict):
+    df = pd.DataFrame(sample_data_dict)
+    unique_plates = list(df.Plate.unique())
+    def pull_last_number(n):
+        return n[-1:]
+    plates_to_process = list(map(pull_last_number, unique_plates))
+    for pl in plates_to_process:
+        add_well_coords_to_df(int(pl), df)
+    return df
+
 
 # ----------
 # Method to return a dictionary with 'x' and 'y' values for a single well based on a plate number and well id. 
