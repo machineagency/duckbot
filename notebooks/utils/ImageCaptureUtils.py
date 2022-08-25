@@ -42,7 +42,7 @@ def image_plates(m, df_with_well_coords, output_data_dir, expt_name):
         well = row['Well']
         well_x = row['x'] 
         well_y = row['y']
-        print(f'Imaging well {well}')
+#         print(f'Imaging well {well}')
         m.moveTo(x=well_x, y=well_y, z=10)
         m.dwell(500) #dwell .75 seconds
         f = cu.getFrame()

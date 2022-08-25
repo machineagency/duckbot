@@ -3,10 +3,13 @@ import matplotlib.patches as mpatches
 import numpy as np
 from matplotlib import pyplot as plt
 import random
+import json
 from plantcv import plantcv as pcv
 
 import utils.PlatePositionUtils as pp
-# from utils.CameraUtils import *
+import platform
+if platform.system() == 'Linux':
+    from utils.CameraUtils import * # this library can only be used on the RPi
 
 
 
@@ -32,9 +35,9 @@ def dispense_to_wells(m, well_coords, dispense_offset, dispenses_per_syringe_fil
         m.moveTo(x=wells[0][0], y = wells[0][1], z = z_dict["dispense"])
 #         print("Hovering over the first well to dispense into")
         for well in wells:
-            print("Prepare to dispense")
-            print(f"X = {well[0]}")
-            print(f"Y = {well[1]}")     
+#             print("Prepare to dispense")
+#             print(f"X = {well[0]}")
+#             print(f"Y = {well[1]}")     
             m.moveTo(x=well[0], y=well[1])
             m.move(de=-dispense_offset, s=1000)
             m.dwell(t=500) #should be a 0.5 second pause to avoid drips between wells. 
