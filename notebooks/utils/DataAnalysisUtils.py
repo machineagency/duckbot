@@ -65,33 +65,40 @@ def analyze_image_files(img_data_dir, processed_img_dir_path, startdate):
     return(amount_green)
 
 #Finds the pixels in the image that correspond to duckweed fronds and counts them
+    
 def calculate_plant_pixels(img_data_dir_path, file, processed_img_dir_path):
     os.chdir(img_data_dir_path)
     img, path, filename = pcv.readimage(filename=file)
+    img_copy, path, filename = pcv.readimage(filename=file)
     plt.ioff()
-    print(file)
-    cropped_img = circle_crop(file)
+    cropped_img = img[200:1050, 200:1050]
     if cropped_img == "Error":
         print(f"Error processing file {file}")
         duckweed_pixels = 0
     else:
         pcv.params.debug = False
         s = pcv.rgb2gray_hsv(cropped_img, 's')
-    #     cv2.imwrite(f'{processed_img_dir_path}/{filename}_processed_cropped_grayscale.jpg', s)
         s_thresh = pcv.threshold.binary(s, 120, 255, 'light')
-    #             s_mblur = pcv.median_blur(s_thresh, 5)
-        s_cnt = pcv.median_blur(s_thresh, 5)
     #     cv2.imwrite(f'{processed_img_dir_path}/{filename}_processed_image_usedforpixelcount.jpg', s_cnt)
-        duckweed_pixels = cv2.countNonZero(s_cnt)
-                #Plot all of the steps along the way
-        fig = plt.figure(figsize=(10, 10)); #semi-colon is intended to supress the output
-        plt.subplot(221),plt.imshow(img,cmap = 'gray')
+        objects, hierarchy = cv2.findContours(s_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2:]
+        objects = list(objects) # Cast tuple objects as a list
+        duckweed_pixels = 0
+        for i, cnt in enumerate(objects):
+            area = cv2.contourArea(cnt)
+            perimeter = cv2.arcLength(cnt,True)
+            roundness = area/(perimeter + 1) #To select for duckweed over lighting artefacts
+            if area > 500 and roundness > 7.5: # can add stricter filters here as necessary
+                print(f"perimeter: {perimeter}\n area: {area}")
+                M = cv2.moments(cnt)
+                cx = int(M['m10']/M['m00'])
+                cy = int(M['m01']/M['m00'])
+                cv2.circle(cropped_img, (cx, cy), 10, (255,0,0), -1) #Draws the little circle in the center of the object
+                cv2.drawContours(cropped_img, objects, i, (255, 102, 255), 2, lineType=8, hierarchy=hierarchy)
+                duckweed_pixels += area
+        fig = plt.figure(figsize=(5, 10)); #semi-colon is intended to supress the output
+        plt.subplot(211),plt.imshow(img_copy ,cmap = 'gray')
         plt.title('Original Image'), plt.xticks([]), plt.yticks([])
-        plt.subplot(222),plt.imshow(cropped_img,cmap = 'gray')
-        plt.title('Cropped image'), plt.xticks([]), plt.yticks([])
-        plt.subplot(223),plt.imshow(s_thresh,cmap = 'gray')
-        plt.title('Thresholded image'), plt.xticks([]), plt.yticks([])
-        plt.subplot(224),plt.imshow(s_cnt,cmap = 'gray')
+        plt.subplot(212),plt.imshow(cropped_img,cmap = 'gray')
         plt.title('Final processed image'), plt.xticks([]), plt.yticks([])
         fig_fname = f'{filename}_Imageprocessing_steps.jpg'
         os.chdir(processed_img_dir_path)
@@ -150,8 +157,9 @@ def plot_media_by_genotype(analysis_df, plot_title):
             ax.errorbar(m_df['dpi'], m_df["median_green_pixels"],yerr=m_df["stdev_green_pixels"], label=g+"-"+m, linewidth=12)
         ax.legend(loc='upper right',fontsize='xx-large')
         fig.suptitle(f"{plot_title} - {g}", size = 25,wrap = False)
-        ax.set_xlabel("Days post Initiation", size = 15)
-        ax.set_ylabel("Frond area (pixels)", size = 15)
+        ax.set_xlabel("Days post Initiation", size = 25)
+        ax.set_ylabel("Frond area (pixels)", size = 25)
+        ax.tick_params(axis='both', which='major', labelsize=15)
         fig.show()
 
 def generate_analysis_df(pixel_df, data_df):
@@ -198,3 +206,7 @@ def remove_outliers(pixel_values):
         return no_outliers
     else:
         return an_array
+    
+    
+
+
