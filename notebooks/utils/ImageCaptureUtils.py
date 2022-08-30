@@ -35,7 +35,8 @@ def pull_plates_to_image(expt_setup_path):
 
 def image_plates(m, df_with_well_coords, output_data_dir, expt_name):
     images = []
-    time_estimate = len(df_with_well_coords.index) / 60
+    time_estimate_s = len(df_with_well_coords.index) * 10 #Assume 10 seconds per image
+    time_estimate_m = time_estimate_s / 60
     print(f"Imaging every well, will take approx. {time_estimate} minutes")
     for index, row in df_with_well_coords.iterrows():
         plate = row['Plate']
