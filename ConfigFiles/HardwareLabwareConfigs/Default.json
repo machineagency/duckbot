@@ -1,7 +1,7 @@
 {"media_reservoir" : { "x" : 75, "y" : 241} , 
  "tool_positions" : {"media_syringe" : 2, "duckweed_syringe" : 3, "inoculation_loop" : 4}, 
  "dispense_calcs" : {"dispenses_per_syringe_fill" : 20, "dispense_mL" : 1.5, "vol_conversion" : 3.9}, 
- "z_dict" : {"zero": 0, "aspirate" : -46.5, "dispense" : -21.5},
+ "media_dispensing_z_dict" : {"zero": 0, "aspirate" : -46.5, "dispense" : -21.5},
  "inoculation_loop_z_dict" : {"collect": -34.7, "move": -7, "transfer": -32},
  "duckweed_reservoir_loc" : [75, 241]
 }
