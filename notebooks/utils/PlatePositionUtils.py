@@ -55,7 +55,8 @@ def fetch_plate_wellpostions(plate_num):
     plate_of_interest = next(p for p in ppc.plates if p["plate_id"] == plate_num)
     start_x = ppc.plate_start_position["x"] + (plate_of_interest["col"] * ppc.plate_column_offset)
     start_y = ppc.plate_start_position["y"] - (plate_of_interest["row"] * ppc.plate_row_offset)
-    for i, well in enumerate(ppc.wells_in_plate):
+    wells_in_plate = ppc.wells_in_plate
+    for i, well in enumerate(wells_in_plate):
         well["x"] = start_x + (well["col"] * ppc.well_column_offset)
         well["y"] = start_y - (well["row"] * ppc.well_row_offset)
     return(wells_in_plate)
