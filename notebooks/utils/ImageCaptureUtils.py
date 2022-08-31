@@ -45,6 +45,8 @@ def image_plates(m, df_with_well_coords, output_data_dir, expt_name):
         well_y = row['y']
 #         print(f'Imaging well {well}')
         m.moveTo(x=well_x, y=well_y, z=10)
+        if plate == 1 && well = "A1":
+            m.dwell(500)
         m.dwell(500) #dwell .75 seconds
         f = cu.getFrame()
         f_rgb = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
@@ -52,6 +54,9 @@ def image_plates(m, df_with_well_coords, output_data_dir, expt_name):
         images.append(f)
         time.sleep(0.1)
         
+        
+def calculate_dwell_time(start_coords, end_coords):
+    
         
 def create_plate_image_grid(df_with_well_coords, output_data_dir):
     plates = list(np.unique(df_with_well_coords['Plate']))
