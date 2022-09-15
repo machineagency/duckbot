@@ -27,7 +27,7 @@ def getCameraIndices():
         i -= 1
     return arr
 
-def getFrame(resolution = [1200, 1200]):
+def getFrame(resolution = [1200, 1200], uvc = False):
     with picamera.PiCamera() as camera:
         camera.resolution = (1200, 1200)
         camera.framerate = 24
@@ -55,34 +55,27 @@ def load_coefficients(path):
     cv_file.release()
     return [camera_matrix, dist_matrix]
 
-def getFrameCamera(idx=0):
+def getFrameCamera(idx=1, focus = -1):
     """Return a frame from the specified camera"""
-    videoCaptureObject = cv2.VideoCapture(idx)
-    for f in range(5): # on mac we have to read several frames
-                       # don't have to on the pi
-        ret,frame = videoCaptureObject.read()
-    videoCaptureObject.release()
+    cap = cv2.VideoCapture(idx)
+    cap.grab()
+    if focus > 0:
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 1)
+        time.sleep(2)
+        cap.set(cv2.CAP_PROP_AUTOFOCUS, 0)
+        time.sleep(2)
+        cap.set(cv2.CAP_PROP_FOCUS, focus)
+#     for f in range(5): # on mac we have to read several frames
+#                        # don't have to on the pi
+    ret,frame = cap.read()
+    cap.release()
     cv2.destroyAllWindows()
     
     if ret:
-        return frame
+        return cv2.cvtColor(cv2.rotate(frame, cv2.ROTATE_180), cv2.COLOR_RGB2BGR)
     else:
         return "couldn't get frame!"
 
-# def saveFrame(idx=0, path="./test.png"):
-#     """Return a frame from the specified camera and save it to file"""
-#     videoCaptureObject = cv2.VideoCapture(idx)
-#     for f in range(5): # on mac we have to read several frames
-#                        # don't have to on the pi
-#         ret,frame = videoCaptureObject.read()
-#         cv2.imwrite(path,frame)
-#     videoCaptureObject.release()
-#     cv2.destroyAllWindows()
-    
-#     if ret:
-#         return frame
-#     else:
-#         return "couldn't get frame!"
 def showFrame(frame, grid=False, save=False):
     plt.imshow(frame)
     plt.title('frame capture')

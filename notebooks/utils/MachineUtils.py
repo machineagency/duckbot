@@ -4,6 +4,7 @@
 
 import serial
 from serial.tools import list_ports
+import serial.threaded
 
 
 class MachineCommunication:
@@ -14,12 +15,28 @@ class MachineCommunication:
         self.transform = []
         self.img_size = []
         
+#         self.serialRead()
         
     def send(self, cmd):
         """Send GCode over serial connection"""
         cmd += self.lineEnding
         bcmd = cmd.encode('UTF-8')
         self.ser.write(bcmd)
+    
+#     def serialRead(self):
+        
+#         class LineReader(serial.threaded.LineReader):
+#             def __init__(self):
+#                 print('test!')
+#                 super(LineReader, self).__init__()
+#                 self.received_lines = []
+                
+#             def handle_line(self, data):
+#                 print(data)
+#                 self.received_lines.append(data)
+                
+#         with serial.threaded.ReaderThread(self.ser, LineReader) as protocol:
+#             protocol.run()
         
 
     def moveTo(self, x=None, y=None, z=None, s = 6000):
@@ -140,6 +157,7 @@ class MachineCommunication:
         self.send(cmd)
         
     def px_to_real(x,y, relative = False):
+        """Convert pixel location to bed location. Requires camera-machine calibration"""
         x = (x / self.img_size[0]) - 0.5
         y = (y / self.img_size[1]) - 0.5
         rel = 1 if relative else 0

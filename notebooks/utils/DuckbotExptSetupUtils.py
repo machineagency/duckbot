@@ -113,10 +113,12 @@ def inoculation_loop_transfer(m, df, duckweed_reservoir, z_dict):
             m.moveTo(x=duckweed_reservoir[0] + rx, y=duckweed_reservoir[1] + ry)
 
             # dip into the reservoir
-            m.moveTo(z=z_dict['collect'])
+            m.moveTo(z=z_dict['collect']) # changing for wolffia. change back
+#             m.moveTo(z=-30.5) # wolffia test
             # slowly sweep
             m.move(dx=5, s=100)
             m.move(dy=5, s=100)
+#             m.move(dy=5, s=800) # wolffia test
             m.move(dz=10, s=250) # start moving slowly up
             m.moveTo(z=z_dict['move'])
             well = pp.fetch_well_position(s["Plate"][-1], str(s["Well"]))
