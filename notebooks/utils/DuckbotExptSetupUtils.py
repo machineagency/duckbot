@@ -222,6 +222,49 @@ def check_wells(m, df):
     # update the df with the a new column
     df['hasFronds'] = has_fronds
     
+def find_and_count_fronds(img):
+    # first, threshold the image and take distance transform to identify the foreground
+    s = pcv.rgb2gray_hsv(img, 's') # using saturation channel
+    s_thresh = pcv.threshold.binary(s, 120, 255, 'light') # threshold
+    dist = cv2.distanceTransform(s_thresh, cv2.DIST_L2, cv2.DIST_MASK_PRECISE) # distance transfrom to identify foreground
+    cv2.normalize(dist, dist, 0, 1.0, cv2.NORM_MINMAX) # normalize
+    
+    # now distance transform by a template circle to more cleanly identify seperate fronds
+    border_size = 30  # approx radius of lemna minor fronds. might need to change for other genotypes?
+    distborder = cv2.copyMakeBorder(dist, border_size, border_size, border_size, border_size,
+                                    cv2.BORDER_CONSTANT | cv2.BORDER_ISOLATED, 0)
+    gap = 0                        
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2*(border_size-gap)+1, 2*(border_size-gap)+1))
+    kernel = cv2.copyMakeBorder(kernel, gap, gap, gap, gap,
+                                cv2.BORDER_CONSTANT | cv2.BORDER_ISOLATED, 0)
+    dist_templ = cv2.distanceTransform(kernel, cv2.DIST_L2, cv2.DIST_MASK_PRECISE) # this is the template circle
+    nxcor = cv2.matchTemplate(distborder, dist_templ, cv2.TM_CCOEFF_NORMED)
+    mn, mx, _, _ = cv2.minMaxLoc(nxcor)
+    th, peaks = cv2.threshold(nxcor, mx*0.5, 255, cv2.THRESH_BINARY)
+    peaks8u = cv2.convertScaleAbs(peaks)
+    contours, hierarchy = cv2.findContours(peaks8u, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+    peaks8u = cv2.convertScaleAbs(peaks) # to use as mask
+    
+    # now loop through the contours, with some simple filtering
+    count = 0
+    loc_data = []
+    for i in range(len(contours)):
+        x, y, w, h = cv2.boundingRect(contours[i])
+        area = cv2.contourArea(contours[i])
+        perimeter = cv2.arcLength(contours[i],True)
+        if perimeter > 100 and area > 500: # can add stricter filters here as necessary
+            _, mx, _, mxloc = cv2.minMaxLoc(dist[y:y+h, x:x+w], peaks8u[y:y+h, x:x+w])
+            cv2.circle(img, (int(mxloc[0]+x), int(mxloc[1]+y)), int(mx), (255, 0, 0), 2)
+            cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 255), 2)
+            cv2.drawContours(img, contours, i, (0, 0, 255), 2)
+            
+            loc_data.append((int(mxloc[0]+x), int(mxloc[1]+y)))
+            count += 1
+       
+
+    return count, loc_data, img
+
+    
 def fill_empty_wells(m, df, duckweed_reservoir, z_dict):
     m.toolChange(4)
     empty = df.loc[df['hasFronds'] == False]
