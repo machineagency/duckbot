@@ -4,6 +4,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import random
 import json
+import math
 from plantcv import plantcv as pcv
 
 import utils.PlatePositionUtils as pp
@@ -130,7 +131,7 @@ def inoculation_loop_transfer(m, df, duckweed_reservoir, z_dict):
             m.moveTo(z=z_dict['move'], s=800)
                      
 #Looks for the outline of the well that the duckweed are in and crops to that outline. 
-def well_check_circle_crop(img):
+def well_check_circle_crop(img, minR = 480, maxR = 500):
     img1 = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     blur = cv2.medianBlur(gray, 5)
@@ -149,8 +150,8 @@ def well_check_circle_crop(img):
                                    minDist=100,
                                    param1=100,
                                    param2=100,
-                                   minRadius=325,
-                                   maxRadius=650
+                                   minRadius=minR,
+                                   maxRadius=500
                                    )
         if circles is None:
             continue
@@ -175,7 +176,7 @@ def well_check_circle_crop(img):
         cropped_img = masked_data[y:y+h,x:x+w]
     else:
         cropped_img = "Error"
-    return(np.ascontiguousarray(cropped_img))
+    return np.ascontiguousarray(cropped_img), i # i is the circle data (center_x, center_y, radius)
 
 def identify_fronds(img):
     s = pcv.rgb2gray_hsv(img, 's')
@@ -222,8 +223,9 @@ def check_wells(m, df):
     # update the df with the a new column
     df['hasFronds'] = has_fronds
     
-def find_and_count_fronds(img):
+def find_and_count_fronds(img, min_r_crop = 480, max_r_crop = 500):
     # first, threshold the image and take distance transform to identify the foreground
+    crop, crop_data = well_check_circle_crop(img, min_r_crop, max_r_crop)
     s = pcv.rgb2gray_hsv(img, 's') # using saturation channel
     s_thresh = pcv.threshold.binary(s, 120, 255, 'light') # threshold
     dist = cv2.distanceTransform(s_thresh, cv2.DIST_L2, cv2.DIST_MASK_PRECISE) # distance transfrom to identify foreground
@@ -254,6 +256,10 @@ def find_and_count_fronds(img):
         perimeter = cv2.arcLength(contours[i],True)
         if perimeter > 100 and area > 500: # can add stricter filters here as necessary
             _, mx, _, mxloc = cv2.minMaxLoc(dist[y:y+h, x:x+w], peaks8u[y:y+h, x:x+w])
+            # check if this is outside of the well based on the crop data:
+            dist_check = math.sqrt((int(mxloc[1]+y) - crop_data[1])**2 + (int(mxloc[0]+x) - crop_data[0])**2)
+            if (dist_check > crop_data[2]): #ignore if this point is outside the well
+                continue
             cv2.circle(img, (int(mxloc[0]+x), int(mxloc[1]+y)), int(mx), (255, 0, 0), 2)
             cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 255), 2)
             cv2.drawContours(img, contours, i, (0, 0, 255), 2)
