@@ -123,10 +123,14 @@ def inoculation_loop_transfer(m, df, duckweed_reservoir, z_dict):
             m.move(dz=10, s=250) # start moving slowly up
             m.moveTo(z=z_dict['move'])
             well = pp.fetch_well_position(s["Plate"][-1], str(s["Well"]))
-            m.moveTo(x=well['x'], y=well['y'])
+            yoff = 0 # offset for right angle inoculation loop
+            if 'radius' in z_dict:
+                print('right angle!')
+                yoff = z_dict['radius']
+            m.moveTo(x=well['x'], y=well['y'] - yoff)
             m.moveTo(z=z_dict['transfer'])
             m.move(dx=3, s=100)
-            m.move(dy=-3, s=100) # move in opposite direction
+            m.move(dy=-5, s=100) # move in opposite direction
             m.dwell(250)
             m.moveTo(z=z_dict['move'], s=800)
                      
@@ -212,7 +216,7 @@ def check_wells(m, df):
         m.moveTo(x=well_x, y=well_y, z=10)
         m.dwell(500) #dwell .75 seconds
         f = getFrame()
-        crop = well_check_circle_crop(f)
+        crop, crop_data = well_check_circle_crop(f)
         frond_check = identify_fronds(crop)
         if frond_check:
             has_fronds.append(True)

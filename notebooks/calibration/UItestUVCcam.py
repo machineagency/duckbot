@@ -80,7 +80,7 @@ def set_focus(x):
     cap.set(cv2.CAP_PROP_FOCUS, x)
 
 
-cv2.createTrackbar("focus", "frame", int(cap.get(cv2.CAP_PROP_FOCUS)), 1023, set_focus)
+cv2.createTrackbar("focus", "frame", int(cap.get(cv2.CAP_PROP_FOCUS)), 1022, set_focus) # 1023
 
 while cap.isOpened():
     # cap frame-by-frame
