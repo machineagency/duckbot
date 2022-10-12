@@ -30,7 +30,7 @@ def dispense_to_wells(m, well_coords, dispense_offset, dispenses_per_syringe_fil
         m.moveTo(z=z_dict["aspirate"])
 #         print("moved to height for aspiration")
        # m.move(de=dispense_offset * dispenses_per_syringe_fill)
-        m.move(de=dispense_offset * (len(wells) + 2), s=1000)
+        m.move(de=-dispense_offset * (len(wells) + 2), s=1000)
         m.moveTo(z = z_dict["zero"])
 #         print("Moved to Z = zero")
         m.moveTo(x=wells[0][0], y = wells[0][1], z = z_dict["dispense"])
@@ -40,13 +40,13 @@ def dispense_to_wells(m, well_coords, dispense_offset, dispenses_per_syringe_fil
 #             print(f"X = {well[0]}")
 #             print(f"Y = {well[1]}")     
             m.moveTo(x=well[0], y=well[1])
-            m.move(de=-dispense_offset, s=1000)
+            m.move(de=dispense_offset, s=1000)
             m.dwell(t=500) #should be a 0.5 second pause to avoid drips between wells. 
         m.moveTo(z = z_dict["zero"])
 #         print("Move to Z = zero")
         m.moveTo(x=media_reservoir["x"], y=media_reservoir['y'])
 #         print("Move to reservoir position")
-        m.move(de=-(dispense_offset * 2), s=1000)
+        m.move(de=(dispense_offset * 2), s=1000)
 #         print("Empty excess media from syringe")
     print("Media dispensing completed")
         
@@ -100,9 +100,12 @@ def inoculation_loop_transfer(m, df, duckweed_reservoir, z_dict):
     grouped_df = df.groupby('genotype')
     for field_value, sample_df in grouped_df:
         print("Place container of duckweed type **{0}** into jubilee and ensure lid is open".format(field_value))
-        print("""Type anything into the input field to confirm that the media is available.
-        After this point the Jubilee will begin dispensing""")
-        input() 
+        print("""Type anything into the input field to confirm that the duckweed is available.
+        After this point the Jubilee will begin transferring""")
+        user_input = input()
+        if user_input == "SKIP":
+            continue
+        
         count = 0
         for index,s in sample_df.iterrows():
             # move to a random point in the reservoir
@@ -135,7 +138,7 @@ def inoculation_loop_transfer(m, df, duckweed_reservoir, z_dict):
             m.moveTo(z=z_dict['move'], s=800)
                      
 #Looks for the outline of the well that the duckweed are in and crops to that outline. 
-def well_check_circle_crop(img, minR = 480, maxR = 500):
+def well_check_circle_crop(img, minR = 350, maxR = 500):
     img1 = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     blur = cv2.medianBlur(gray, 5)

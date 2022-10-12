@@ -1,8 +1,8 @@
-{"media_reservoir" : { "x" : 75, "y" : 241} , 
- "tool_positions" : {"camera" : 1, "media_syringe" : 2, "duckweed_syringe" : 3, "inoculation_loop" : 4}, 
+{"media_reservoir" : { "x" : 85, "y" : 246} , 
+ "tool_positions" : {"inoculation_loop" : 0, "media_syringe" : 1, "duckweed_syringe" : 2, "camera" : 3}, 
  "dispense_calcs" : {"dispenses_per_syringe_fill" : 20, "dispense_mL" : 1.5, "vol_conversion" : 3.9}, 
- "media_dispensing_z_dict" : {"zero": 0, "aspirate" : -46.5, "dispense" : -21.5},
- "inoculation_loop_z_dict" : {"collect": -34.7, "move": -7, "transfer": -33},
+ "media_dispensing_z_dict" : {"zero": 25, "aspirate" : -16.5, "dispense" : 3.5},
+ "inoculation_loop_z_dict" : {"collect": -16.5, "move": 14, "transfer": -15.0},
  "rightangle_inoculation_loop_z_dict" : {"collect": -41.5, "move": -5, "transfer": -39.5, "radius": 3},
- "duckweed_reservoir_loc" : [75, 241]
+ "duckweed_reservoir_loc" : [85, 246]
 }

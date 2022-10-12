@@ -37,7 +37,7 @@ def image_plates(m, df_with_well_coords, output_data_dir, expt_name):
     images = []
     time_estimate_s = len(df_with_well_coords.index) * 10 #Assume 10 seconds per image
     time_estimate_m = time_estimate_s / 60
-    print(f"Imaging every well, will take approx. {time_estimate} minutes")
+    print(f"Imaging every well, will take approx. {time_estimate_m} minutes")
     for index, row in df_with_well_coords.iterrows():
         plate = row['Plate']
         well = row['Well']
@@ -45,8 +45,9 @@ def image_plates(m, df_with_well_coords, output_data_dir, expt_name):
         well_y = row['y']
 #         print(f'Imaging well {well}')
         m.moveTo(x=well_x, y=well_y, z=10)
-        if plate == 1 and well == "A1":
+        if well == "A1":
             m.dwell(500)
+            time.sleep(5)
         m.dwell(500) #dwell .75 seconds
         f = cu.getFrame()
         f_rgb = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
