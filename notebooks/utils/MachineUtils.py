@@ -192,25 +192,28 @@ class MachineCommunication:
     def getPosition(self):
         """Get the current position
         Returns a dictionary with X/Y/Z/U/E keys"""
+        self.ser.reset_input_buffer() # flush the buffer
         cmd = "M114"
         self.send(cmd)
         resp = self.ser.readline().decode('UTF-8') # read the response
-        
+        print(f'the raw response is: {resp}') # sometimes i'm just getting 'ok' here
+        if resp == 'ok\n':
+            resp = self.ser.readline().decode('UTF-8') # read another line
+            
         positions = {}
         keyword = " Count " # this is the keyword hosts like e.g. pronterface search for to track position
         keyword_idx = resp.find(keyword)
+        
+        count = 0
         if keyword_idx > -1:
             resp = resp[:keyword_idx]
             position_elements = resp.split(' ')
             for e in position_elements:
                 axis, pos = e.split(':', 2)
-                positions[axis] = pos
-                
-                
-            
+                positions[axis] = pos          
         
         self.ser.reset_input_buffer() # flush the buffer
-        
+        print(f"now im returning: {positions}")  
         return positions
         
     # ***************MACROS***************
