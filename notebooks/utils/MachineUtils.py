@@ -4,12 +4,25 @@
 
 import serial
 from serial.tools import list_ports
-import serial.threaded
+# import serial.threaded
 
+def available_ports():
+    ports = serial.tools.list_ports.comports()
+    return [port.name for port in ports]
 
 class MachineCommunication:
     
-    def __init__(self, port, baudRate = 115200):
+    def __init__(self, port=None, baudRate = 115200):
+        print(port)
+        if port == None:
+            # autoconnect to ttyACM* if it exists & is unique
+            ports = [p.name for p in serial.tools.list_ports.comports() if 'ttyACM' in p.name]
+            if len(ports) > 1:
+                print('More than one possible serial device found. Please connect to an explicit port.')
+                return
+            else:
+                port = f"/dev/{ports[0]}"
+        print(port)
         self.ser = serial.Serial(port, baudRate) 
         self.lineEnding = '\n'
         self.transform = []
