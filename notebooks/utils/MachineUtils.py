@@ -13,7 +13,6 @@ def available_ports():
 class MachineCommunication:
     
     def __init__(self, port=None, baudRate = 115200):
-        print(port)
         if port == None:
             # autoconnect to ttyACM* if it exists & is unique
             ports = [p.name for p in serial.tools.list_ports.comports() if 'ttyACM' in p.name]
@@ -22,12 +21,12 @@ class MachineCommunication:
                 return
             else:
                 port = f"/dev/{ports[0]}"
-        print(port)
         self.ser = serial.Serial(port, baudRate) 
         self.lineEnding = '\n'
         self.transform = []
         self.img_size = []
         
+        self.send("M450") # sample command to start serial connection
 #         self.serialRead()
         
     def send(self, cmd):
