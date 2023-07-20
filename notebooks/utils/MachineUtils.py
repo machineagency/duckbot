@@ -51,7 +51,7 @@ class MachineCommunication:
 #             protocol.run()
         
 
-    def moveTo(self, x=None, y=None, z=None, s = 6000):
+    def moveTo(self, x=None, y=None, z=None, v=None, s = 6000):
         """Move to an absolute (x,y,z) position
 
         Parameters
@@ -66,25 +66,35 @@ class MachineCommunication:
         Nothing
 
         """
+        if v and (v > 48 or v < 0):
+            v=None
+            raise Exception ('V cannot be less than O or greater than 48')
+        
         x = "{0:.2f}".format(x) if x is not None else None
         y = "{0:.2f}".format(y) if y is not None else None
         z = "{0:.2f}".format(z) if z is not None else None
+        v = "{0:.2f}".format(v) if v is not None else None
         s = "{0:.2f}".format(s)
-        x_cmd = y_cmd = z_cmd = f_cmd = ''
+        x_cmd = y_cmd = z_cmd = v_cmd = f_cmd = ''
+        
         if x is not None:
             x_cmd = f'X{x}'
         if y is not None:
             y_cmd = f'Y{y}'
         if z is not None:
             z_cmd = f'Z{z}'
+        if v is not None:
+            v_cmd = f'V{v}'
         if s is not None:
             f_cmd = f'F{s}'
         
+        
+        
         self.setAbsolute()
-        cmd = f"G0 {x_cmd} {y_cmd} {z_cmd} {f_cmd}"
+        cmd = f"G0 {x_cmd} {y_cmd} {z_cmd} {v_cmd} {f_cmd}"
         self.send(cmd)
         
-    def move(self, dx = None, dy = None, dz = None, de = None, s = 6000):
+    def move(self, dx = None, dy = None, dz = None, de = None, dv=None, s = 6000):
         """Move relative to the current position
 
         Parameters
@@ -103,8 +113,9 @@ class MachineCommunication:
         dy = "{0:.2f}".format(dy) if dy is not None else None
         dz = "{0:.2f}".format(dz) if dz is not None else None
         de = "{0:.2f}".format(de) if de is not None else None
+        dv = "{0:.2f}".format(dv) if dv is not None else None
         s = "{0:.2f}".format(s)
-        x_cmd = y_cmd = z_cmd = e_cmd = f_cmd = ''
+        x_cmd = y_cmd = z_cmd = e_cmd = f_cmd = v_cmd = ''
         if dx is not None:
             x_cmd = f'X{dx}'
         if dy is not None:
@@ -113,13 +124,15 @@ class MachineCommunication:
             z_cmd = f'Z{dz}'
         if de is not None:
             e_cmd = f'E{de}'
+        if dv is not None:
+            v_cmd = f'V{dv}'
         if s is not None:
             f_cmd = f'F{s}'
         
         
         self.setRelative()
         self.setExtruderRelative()
-        cmd = f"G1 {x_cmd} {y_cmd} {z_cmd} {e_cmd} {f_cmd}"
+        cmd = f"G1 {x_cmd} {y_cmd} {z_cmd} {e_cmd} {f_cmd} {v_cmd}"
         self.send(cmd)
         self.setAbsolute() # restore absolute positioning
         
@@ -227,6 +240,24 @@ class MachineCommunication:
         self.ser.reset_input_buffer() # flush the buffer
         print(f"now im returning: {positions}")  
         return positions
+    
+    def aspirate(self, vol):
+        dv=(vol*-36/50)
+        end_pos = float(self.getPosition()['V']) + dv
+        print(end_pos)
+        self.moveTo(v=end_pos)
+        
+    def dispense(self, vol):    
+        dv=(vol*36/50)
+        end_pos = float(self.getPosition()['V']) + dv
+        self.moveTo(v=end_pos, s = 6000)
+        
+    def aspirate_prime(self):
+        self.moveTo(v=36.5) # currently hardcoded
+        
+    def eject_tip(self):
+        self.moveTo(v=45)
+        self.aspirate_prime()
         
     # ***************MACROS***************
     def tool_lock(self):
