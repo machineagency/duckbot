@@ -66,9 +66,9 @@ class MachineCommunication:
         Nothing
 
         """
-        if v and (v > 48 or v < 0):
-            v=None
-            raise Exception ('V cannot be less than O or greater than 48')
+        if v and (v > 200.0 or v < 0):
+                v=None
+                raise Exception ('V cannot be less than O or greater than 200.0')
         
         x = "{0:.2f}".format(x) if x is not None else None
         y = "{0:.2f}".format(y) if y is not None else None
@@ -241,22 +241,22 @@ class MachineCommunication:
         print(f"now im returning: {positions}")  
         return positions
     
-    def aspirate(self, vol):
-        dv=(vol*-36/50)
+    def aspirate(self, vol): # volume is in microliters. 50 is the max volume
+        dv=(vol*-152.0/50)
         end_pos = float(self.getPosition()['V']) + dv
-        print(end_pos)
         self.moveTo(v=end_pos)
         
-    def dispense(self, vol):    
-        dv=(vol*36/50)
+    def dispense(self, vol): # volume is in microliters. 50 is the max volume
+        dv=(vol*152.0/50)
         end_pos = float(self.getPosition()['V']) + dv
-        self.moveTo(v=end_pos, s = 6000)
+        self.moveTo(v=end_pos)
         
+
     def aspirate_prime(self):
-        self.moveTo(v=36.5) # currently hardcoded
+        self.moveTo(v=200*0.76)
         
     def eject_tip(self):
-        self.moveTo(v=45)
+        self.moveTo(v=190.0)
         self.aspirate_prime()
         
     # ***************MACROS***************
