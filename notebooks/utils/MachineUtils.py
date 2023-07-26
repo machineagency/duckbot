@@ -22,8 +22,7 @@ def machine_homed(func):
     return homing_check
 
 class MachineCommunication:
-     """Driver for sending commands and polling the machine state."""
-    def __init__(self, port=None, baudRate = 115200):
+    def __init__(self, port=None, baudrate = 115200):
         """Set default values and connect to the machine"""
         # Serial Info
         self.ser = None
@@ -44,7 +43,7 @@ class MachineCommunication:
         self.transform = []
         self.img_size = []
         
-        self.connect(self, port, baudrate)
+        self.connect(port, baudrate)
 
         
     
@@ -57,22 +56,23 @@ class MachineCommunication:
                 raise MachineStateError("More than one possible serial device found. Please connect to an explicit port.")
             else:
                 port = f"/dev/{ports[0]}"
-        self.ser = serial.Serial(port, baudRate) 
+        self.ser = serial.Serial(port, baudrate, timeout = 1) 
         self.send("M450") # sample command to initialize serial connection
-        
         # update machine state with info from the object model
         self.axes_homed = json.loads(self.send('M409 K"move.axes[].homed"'))["result"] # check if this works, could alternatively check number of configured axes with move.axes?
             
         # clear all previous values and reset
-        self.configured_axes = None
+        self._configured_axes = None
+        self._configured_tools = None
         self._active_tool_index = None
         self._tool_z_offsets = None
         self._axis_limits = None
         
         self.configured_axes
+        self.configured_tools
         self.active_tool_index
         self.tool_z_offsets
-        self.axis_limits
+#         self.axis_limits
         self._set_absolute_positioning()
             
     def send(self, cmd: str = ""):
@@ -82,19 +82,19 @@ class MachineCommunication:
         self.ser.write(bcmd)
         
         # read response
-        # ToDo: Test this
         self.ser.reset_input_buffer() # flush the buffer
         resp = self.ser.readline().decode('UTF-8') # read the response
-        if resp == 'ok\n':
-            resp = self.ser.readline().decode('UTF-8') # read another line if first is just confirmation
         
-        # do I need to flush the buffer again? check this
+#         if resp == 'ok\n':
+#             print('got an ok')
+#             resp = self.ser.readline().decode('UTF-8') # read another line if first is just confirmation
         return resp
     
     def _set_absolute_positioning(self):
         """Set absolute positioning for all axes except extrusion"""
         self.send("G90")
         self._absolute_positioning = True
+        
 
     def _set_relative_positioning(self):
         """Set relative positioning for all axes except extrusion"""
@@ -122,12 +122,12 @@ class MachineCommunication:
     @property
     def configured_axes(self):
         """Return the configured axes of the machine. Particularly relevant V axis is in use for e.g. pipetting"""
-        # ToDo: test this
-        if configured_axes is None: # Starting from a fresh connection
+        if self._configured_axes is None: # Starting from a fresh connection
             try:
                 response = json.loads(self.send('M409 K"move.axes[]"'))["result"]
-                # set _configured_axes
-                # need to seee what response looks like before doing more here
+                self._configured_axes = []
+                for axis in response:
+                    self._configured_axes.append(axis['letter'])
             except ValueError as e:
                 print("Error occurred trying to read axis limits on each axis!")
                 raise e
@@ -138,13 +138,12 @@ class MachineCommunication:
     @property
     def configured_tools(self):
         """Return the configured tools."""
-        # ToDo: test this
-        if configured_tools is None: # Starting from a fresh connection
+        if self._configured_tools is None: # Starting from a fresh connection
             try:
-                response = json.loads(self.send('M409 K"tools[]"'))["result"] 
-                # need to check what the response looks like
-                # if it includes human readable name, could allow to choose with that in addition to number
-                # set _configured_tools
+                response = json.loads(self.send('M409 K"tools[]"'))["result"]
+                self._configured_tools = []
+                for tool in response:
+                    self._configured_tools.append(tool['name'])
             except ValueError as e:
                 print("Error occurred trying to read axis limits on each axis!")
                 raise e
@@ -158,7 +157,6 @@ class MachineCommunication:
         if self._active_tool_index is None: # Starting from a fresh connection.
             try:
                 response = self.send("T")
-                # ToDo: Check the following
                 # On HTTP Interface, we get a string instead of -1 when there are no tools.
                 if response.startswith('No tool'):
                     return -1
@@ -180,7 +178,7 @@ class MachineCommunication:
         # Starting from fresh connection, query from the Duet.
         if self._tool_z_offsets is None:
             try:
-                response = json.loads(self.send('"M409 K"tools"'))["result"]
+                response = json.loads(self.send('M409 K"tools"'))["result"]
                 self._tool_z_offsets = [] # Create a fresh list.
                 for tool_data in response:
                     tool_z_offset = tool_data["offsets"][2] # Pull Z axis
@@ -378,7 +376,7 @@ class MachineCommunication:
     def get_position(self):
         """Get the current position, returns a dictionary with X/Y/Z/U/E/V keys"""
         # I've changed this; todo: check it all works
-        response = self.send("M114")  
+        resp = self.send("M114")  
         positions = {}
         keyword = " Count " # this is the keyword hosts like e.g. pronterface search for to track position
         keyword_idx = resp.find(keyword)
@@ -395,20 +393,20 @@ class MachineCommunication:
     
     def aspirate(self, vol): # volume is in microliters. 50 is the max volume
         dv=(vol*-152.0/50)
-        end_pos = float(self.getPosition()['V']) + dv
-        self.moveTo(v=end_pos)
+        end_pos = float(self.get_position()['V']) + dv
+        self.move_to(v=end_pos)
         
     def dispense(self, vol): # volume is in microliters. 50 is the max volume
         dv=(vol*152.0/50)
-        end_pos = float(self.getPosition()['V']) + dv
-        self.moveTo(v=end_pos)
+        end_pos = float(self.get_position()['V']) + dv
+        self.move_to(v=end_pos)
         
 
     def aspirate_prime(self):
-        self.moveTo(v=200*0.76)
+        self.move_to(v=200*0.76)
         
     def eject_tip(self):
-        self.moveTo(v=190.0)
+        self.move_to(v=190.0)
         self.aspirate_prime()
                              
                              
