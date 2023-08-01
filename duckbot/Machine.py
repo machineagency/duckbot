@@ -3,7 +3,18 @@
 
 import serial
 from serial.tools import list_ports
+import os
+import sys
 import json
+from pathlib import Path
+import duckbot.tools
+
+def get_root_dir():
+    return Path(__file__).parent.parent
+
+class MachineConfigurationError(Exception):
+    """Raise this error if there is something wrong with how the machine is configured"""
+    pass
 
 class MachineStateError(Exception):
     """Raise this error if the machine is in the wrong state to perform the requested action."""
@@ -21,7 +32,20 @@ def machine_homed(func):
         return func(self, *args, **kwds)
     return homing_check
 
-class MachineCommunication:
+class Machine:
+    # load the configuration file which maps tool names on the machine 
+    # to tool types which have been configured with associated modules
+    with open(os.path.join(get_root_dir(), "config/machine/tool_types.json"), 'r') as f:
+        TOOL_TYPES = json.load(f)
+
+    for tool_name, tool_type in TOOL_TYPES.items():
+        # if there's no matching tool module imported, raise an error
+        if f"{duckbot.tools.__name__}.{tool_type}" not in sys.modules.keys():
+            raise MachineConfigurationError(f"Error: there is no {tool_type} module in config/machine/tool_types.json.")
+        #otherwise, add it to our TOOL_TYPES
+        else:
+            TOOL_TYPES[tool_name] = getattr(sys.modules[duckbot.tools.__name__], tool_type)
+            
     def __init__(self, port=None, baudrate = 115200):
         """Set default values and connect to the machine"""
         # Serial Info
@@ -37,7 +61,7 @@ class MachineCommunication:
         self._tool_z_offsets = None # Cached value under the @property.
         self._axis_limits = None # Cached value under the @property.
         self.axes_homed = [False]*4 # We have at least X/Y/Z/U axes to home. Additional axes handled below in connect()
-        
+        self.tool = None # tool equipped
         # Camera Info
         # ToDo: separate this out
         self.transform = []
@@ -138,6 +162,7 @@ class MachineCommunication:
     @property
     def configured_tools(self):
         """Return the configured tools."""
+        print('configuring tools')
         if self._configured_tools is None: # Starting from a fresh connection
             try:
                 response = json.loads(self.send('M409 K"tools[]"'))["result"]
@@ -354,11 +379,28 @@ class MachineCommunication:
         
         self.send(cmd)
         
-    def tool_change(self, tool_idx: int):
+    def tool_change(self, tool_id: int):
         """Change to specified tool"""
         # ToDo: use info from _configured_tools here to make sure tool exists, and address by human-readable name
+        if isinstance(tool_id, str): # accept either tool number or tool name
+            # get the tool index from the configured tools list
+            try:
+                tool_idx = list(self._configured_tools.keys())[list(self._configured_tools.values()).index(tool_id)]
+                tool_name = tool_id # this tool name was passed
+            except:
+                raise MachineConfigurationError(f'Erro: no tool named {tool_id} found in current configuration!')
+        else:
+            try:
+                tool_idx = tool_id # the tool id was passed
+                tool_name = self._configured_tools[tool_idx]
+            except:
+                raise MachineConfigurationError(f'Erro: no tool with index {tool_id} found in current configuration!')
+        
         cmd = f'T{tool_idx}'
         self.send(cmd)
+        # update current state
+        self.tool = Machine.TOOL_TYPES[tool_name](self, tool_idx, tool_name)
+        self._active_tool_index = tool_idx
         
     def park_tool(self):
         """Deselect tool"""
