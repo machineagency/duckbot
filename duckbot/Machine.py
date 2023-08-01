@@ -39,12 +39,16 @@ class Machine:
         TOOL_TYPES = json.load(f)
 
     for tool_name, tool_type in TOOL_TYPES.items():
+        tool_type, *tool_details = tool_type.split("_", 1)
         # if there's no matching tool module imported, raise an error
+        # ToDo: Check that the relevant config exists if tool_details are provided
         if f"{duckbot.tools.__name__}.{tool_type}" not in sys.modules.keys():
             raise MachineConfigurationError(f"Error: there is no {tool_type} module in config/machine/tool_types.json.")
         #otherwise, add it to our TOOL_TYPES
         else:
-            TOOL_TYPES[tool_name] = getattr(sys.modules[duckbot.tools.__name__], tool_type)
+            TOOL_TYPES[tool_name] = {}
+            TOOL_TYPES[tool_name]['tool_type'] = getattr(sys.modules[duckbot.tools.__name__], tool_type)
+            TOOL_TYPES[tool_name]['details'] = tool_details[0] if tool_details else ''
             
     def __init__(self, port=None, baudrate = 115200):
         """Set default values and connect to the machine"""
@@ -281,11 +285,6 @@ class Machine:
         Nothing
 
         """
-        if v and (v > 200.0 or v < 0):
-                v=None
-                raise Exception ('V cannot be less than O or greater than 200.0')
-
-        
         x = "{0:.2f}".format(x) if x is not None else None
         y = "{0:.2f}".format(y) if y is not None else None
         z = "{0:.2f}".format(z) if z is not None else None
@@ -381,7 +380,6 @@ class Machine:
         
     def tool_change(self, tool_id: int):
         """Change to specified tool"""
-        # ToDo: use info from _configured_tools here to make sure tool exists, and address by human-readable name
         if isinstance(tool_id, str): # accept either tool number or tool name
             # get the tool index from the configured tools list
             try:
@@ -399,12 +397,16 @@ class Machine:
         cmd = f'T{tool_idx}'
         self.send(cmd)
         # update current state
-        self.tool = Machine.TOOL_TYPES[tool_name](self, tool_idx, tool_name)
+        tool_type = Machine.TOOL_TYPES[tool_name]['tool_type']
+        tool_details = Machine.TOOL_TYPES[tool_name]['details']
+        self.tool = tool_type(self, tool_idx, tool_name, tool_details)
         self._active_tool_index = tool_idx
         
     def park_tool(self):
         """Deselect tool"""
         self.send("T-1")
+        self._active_tool_index = None
+        self.tool = None
         
     def px_to_real(x,y, relative = False):
         """Convert pixel location to bed location. Requires camera-machine calibration"""
@@ -432,24 +434,6 @@ class Machine:
                 positions[axis] = pos          
 
         return positions
-    
-    def aspirate(self, vol): # volume is in microliters. 50 is the max volume
-        dv=(vol*-152.0/50)
-        end_pos = float(self.get_position()['V']) + dv
-        self.move_to(v=end_pos)
-        
-    def dispense(self, vol): # volume is in microliters. 50 is the max volume
-        dv=(vol*152.0/50)
-        end_pos = float(self.get_position()['V']) + dv
-        self.move_to(v=end_pos)
-        
-
-    def aspirate_prime(self):
-        self.move_to(v=200*0.76)
-        
-    def eject_tip(self):
-        self.move_to(v=190.0)
-        self.aspirate_prime()
                              
                              
         
