@@ -23,6 +23,8 @@ class MachineStateError(Exception):
 def machine_homed(func):
     def homing_check(self, *args, **kwds):
         # Check the cached value if one exists.
+        if self.simulated:
+            return func(self, *args, **kwds)
         if self.axes_homed and all(self.axes_homed):
             return func(self, *args, **kwds)
         # Request homing status from the object model if not known.
@@ -50,13 +52,14 @@ class Machine:
             TOOL_TYPES[tool_name]['tool_type'] = getattr(sys.modules[duckbot.tools.__name__], tool_type)
             TOOL_TYPES[tool_name]['details'] = tool_details[0] if tool_details else ''
             
-    def __init__(self, port=None, baudrate = 115200):
+    def __init__(self, port=None, baudrate = 115200, simulated = False):
         """Set default values and connect to the machine"""
         # Serial Info
         self.ser = None
         self.lineEnding = '\n'
         
         # Machine Info
+        self.simulated = simulated
         self._configured_axes = None
         self._configured_tools = None
         self._absolute_positioning = True # Absolute positioning by default
@@ -77,6 +80,17 @@ class Machine:
     
     def connect(self, port, baudrate):
         """Connect to the machine over serial"""
+        if self.simulated:
+            # simulated tools on my machine
+            self._configured_tools = {
+                                        0 : "Inoculation Loop",
+                                        1 : "BrokenTrons",
+                                        2 : "Side Camera",
+                                        3 : "Top-Down Camera",
+                                        4 : "10cc Syringe"
+                                     }
+            return
+        
         if port == None:
             # autoconnect to ttyACM* if it exists & is unique
             ports = [p.name for p in serial.tools.list_ports.comports() if 'ttyACM' in p.name]
@@ -105,6 +119,8 @@ class Machine:
             
     def send(self, cmd: str = ""):
         """Send GCode over serial connection"""
+        if self.simulated:
+            return None
         cmd += self.lineEnding
         bcmd = cmd.encode('UTF-8')
         self.ser.write(bcmd)
