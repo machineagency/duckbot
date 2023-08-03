@@ -3,5 +3,6 @@
     "BrokenTrons"      : "Pipette_p50_gen1",
     "Side Camera"      : "Camera",
     "Top-Down Camera"  : "Camera",
-    "10cc Syringe"     : "Syringe"
+    "10cc Syringe"     : "Syringe",
+    "Plate"    : "LabAutomationPlate"
 }

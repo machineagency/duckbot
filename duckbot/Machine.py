@@ -8,6 +8,7 @@ import sys
 import json
 from pathlib import Path
 import duckbot.tools
+import duckbot.plates
 
 def get_root_dir():
     return Path(__file__).parent.parent
@@ -34,6 +35,13 @@ def machine_homed(func):
         return func(self, *args, **kwds)
     return homing_check
 
+def requires_bed_plate(func):
+    def plate_check(self, *args, **kwds):
+        if self.plate is None:
+            raise MachineStateError("Error: No bed plate is set up")
+        return func(self, *args, **kwds)
+    return plate_check
+
 class Machine:
     # load the configuration file which maps tool names on the machine 
     # to tool types which have been configured with associated modules
@@ -42,15 +50,19 @@ class Machine:
 
     for tool_name, tool_type in TOOL_TYPES.items():
         tool_type, *tool_details = tool_type.split("_", 1)
-        # if there's no matching tool module imported, raise an error
+        # if there's no matching tool or plate module imported, raise an error
+        # there should be only one plate name "Plate" in tool_types.json
         # ToDo: Check that the relevant config exists if tool_details are provided
-        if f"{duckbot.tools.__name__}.{tool_type}" not in sys.modules.keys():
-            raise MachineConfigurationError(f"Error: there is no {tool_type} module in config/machine/tool_types.json.")
+        module = duckbot.tools.__name__
+        if f"{module}.{tool_type}" not in sys.modules.keys():
+            module = duckbot.plates.__name__
+            if f"{module}.{tool_type}" not in sys.modules.keys():
+                raise MachineConfigurationError(f"Error: there is no {tool_type} module.")
         #otherwise, add it to our TOOL_TYPES
-        else:
-            TOOL_TYPES[tool_name] = {}
-            TOOL_TYPES[tool_name]['tool_type'] = getattr(sys.modules[duckbot.tools.__name__], tool_type)
-            TOOL_TYPES[tool_name]['details'] = tool_details[0] if tool_details else ''
+        print(module)
+        TOOL_TYPES[tool_name] = {}
+        TOOL_TYPES[tool_name]['tool_type'] = getattr(sys.modules[module], tool_type)
+        TOOL_TYPES[tool_name]['details'] = tool_details[0] if tool_details else ''
             
     def __init__(self, port=None, baudrate = 115200, simulated = False):
         """Set default values and connect to the machine"""
@@ -69,6 +81,7 @@ class Machine:
         self._axis_limits = None # Cached value under the @property.
         self.axes_homed = [False]*4 # We have at least X/Y/Z/U axes to home. Additional axes handled below in connect()
         self.tool = None # tool equipped
+        self.plate = None # bed plate equipped
         # Camera Info
         # ToDo: separate this out
         self.transform = []
@@ -252,6 +265,13 @@ class Machine:
                 raise e
         # Return the cached value.
         return self._axis_limits
+    
+    def set_plate(self, config_path = None):
+        # need to accommodate different bed plates with different number of constructor arguments
+        # i.e. base plate doesn't have a config, labautomationplate does
+        plate_type = Machine.TOOL_TYPES['Plate']['tool_type']
+        tool_details = Machine.TOOL_TYPES['Plate']['details']
+        self.plate = plate_type(self, "Plate", config_path)
         
     def home_x(self):
         """Home the X axis"""
