@@ -59,7 +59,6 @@ class Machine:
             if f"{module}.{tool_type}" not in sys.modules.keys():
                 raise MachineConfigurationError(f"Error: there is no {tool_type} module.")
         #otherwise, add it to our TOOL_TYPES
-        print(module)
         TOOL_TYPES[tool_name] = {}
         TOOL_TYPES[tool_name]['tool_type'] = getattr(sys.modules[module], tool_type)
         TOOL_TYPES[tool_name]['details'] = tool_details[0] if tool_details else ''
@@ -266,12 +265,12 @@ class Machine:
         # Return the cached value.
         return self._axis_limits
     
-    def set_plate(self, config_path = None):
+    def set_plate(self, **kwargs):
         # need to accommodate different bed plates with different number of constructor arguments
         # i.e. base plate doesn't have a config, labautomationplate does
-        plate_type = Machine.TOOL_TYPES['Plate']['tool_type']
+        plate_type = Machine.TOOL_TYPES['Plate']['tool_type'] # assumes only 1 plate named 'Plate' in tool_types.json
         tool_details = Machine.TOOL_TYPES['Plate']['details']
-        self.plate = plate_type(self, "Plate", config_path)
+        self.plate = plate_type(self, "Plate", **kwargs)
         
     def home_x(self):
         """Home the X axis"""
