@@ -5,8 +5,10 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib import pyplot as plt
 import numpy as np
-import picamera #Note that this can only be installed on raspbery pi. 
 import time
+import platform
+if platform.system() == 'Linux':
+    import picamera # Note that this can only be installed on raspbery pi. 
 
 class Camera(Tool):
     def __init__(self, machine, index, name, details):
