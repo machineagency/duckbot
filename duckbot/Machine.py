@@ -194,7 +194,6 @@ class Machine:
     @property
     def configured_tools(self):
         """Return the configured tools."""
-        print('configuring tools')
         if self._configured_tools is None: # Starting from a fresh connection
             try:
                 response = json.loads(self.send('M409 K"tools[]"'))["result"]

@@ -15,6 +15,7 @@ class LabAutomationPlate(Plate):
         with open(config_path, 'r') as f:
             config_contents = json.load(f)
             
+        self.sharps_container = None
         self.num_slots = len(config_contents)
         self.slots = {}
         for slot_index, origin in config_contents.items():
@@ -22,6 +23,11 @@ class LabAutomationPlate(Plate):
             self.slots[slot_index] = {}
             self.slots[slot_index]['origin'] = [float(i) for i in origin]
             self.slots[slot_index]['labware'] = None
+        
+        # The sharps container is calibrated as slot index -1
+        if self.slots[-1]:
+            self.sharps_container = self.slots[-1]
+        
             
     def load_labware(self, slot_index, labware_name):
         labware_config_path = os.path.join(self.get_root_dir(), f"config/labware/{labware_name}.json")
@@ -61,9 +67,9 @@ class LabAutomationPlate(Plate):
         # average the redundant angle measurements
         theta1 = math.asin((b[1] - a[1]) / labware_width)
         theta2 = math.asin((c[0] - b[0]) / labware_height)
-        print(theta1, theta2)
         theta = (theta1 + theta2)/2
         slot['theta'] = theta
+        input(f"Load {labware_name} into slot {slot_index}. Press any key to continue.")
             
     def get_well_position(self, slot_index, well_id):
         if self.slots[slot_index]['labware'] is None:
@@ -98,8 +104,49 @@ class LabAutomationPlate(Plate):
         
         return [x_nominal, y_nominal, x_offset, y_offset]
             
+    def wells(self, slot_index):
+        """Return a list of all the wells for this labware."""
         
-            
+       
+        slot = self.slots[slot_index]
+        if not slot['labware']:
+            raise PlateStateError(f"Error: No labware loaded into slot {slot_index}")
+        labware = slot['labware']
+        
+        # Return first down a row (A1, B1, ...) then column
+        wells = []
+        for i in range(labware.column_count):
+            for j in range(labware.row_count):
+                row_letter = self.row_index_to_letter(j)
+                well_position = get_well_position(slot_index, f"{row_letter}{j}")
+                wells.append(well_position)
+        
+        return wells
+        
+    def row_index_to_letter(row_index):
+        """Convert a row number (0-indexed) to a letter"""
+        return chr(ord('@')+row_index) 
+    
+    
+    def row_letter_to_index(row_letter):
+        """Convert a row letter (A, B, C...) to a 0-indexed number"""
+        return ord(row_letter.upper()) - 65
+       
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         
 
     
