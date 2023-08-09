@@ -4,48 +4,28 @@ import os
 import json
 import math
 
-                                                                                                                         
+# The Automation Bed Plate and well plates are oriented as follows:                                          
 
-# The Automation Bed Plate is laid out as follows:                                          
-
-#                          BED PLATE TOP VIEW                                                                                                                         
-#         Machine Origin                                                                                                                        
-#             (0,0)                                                                                                                             
-#                +------------------------------------+                                                                                                        
-#                |   +------+   +------+   +------+   |                                                                                            
-#                |   |      |   |      |   |      |   |                                                                                                               
-#                |   |      |   |      |   |      |   |                                                                                       
-#                |   |  0   |   |  1   |   |  2   |   |                                                                                       
-#                |   |      |   |      |   |      |   |                                                                                       
-#                |   |      |   |      |   |      |   |                                                                                       
-#                |   +------+   +------+   +------+   | Tool Rack                                                                             
-#                |   +------+   +------+   +------+   |                                                                                                           
-#                |   |      |   |      |   |      |   |                                                                                       
-#                |   |      |   |      |   |      |   |                                                                                       
-#                |   |  5   |   |  4   |   |  3   |   |                                                                                                           
-#   Power Supply |   |      |   |      |   |      |   |                                                                                                           
-#                |   |      |   |      |   |      |   |                                                                                                           
-#                |   +------+   +------+   +------+   |                                                                                                           
-#                +------------------------------------+                          
-# 
-# 
-# The wells in each slot are aligned as follows:
-#                    WELL PLATE TOP VIEW
-#                +--------------------+             
-#                | Well          Well |             
-#                |  i1            A1  |             
-#                |                    |             
-#                |                    |             
-#                |                    |             
-#                |                    |             
-#                |                    |             
-#                |                    |             
-#                |                    |             
-#                |                    |                     
-#                |                    |             
-#                | Well          Well |             
-#                |  ij            Aj  |             
-#                +--------------------+                                                          
+#                          BED PLATE TOP VIEW                          WELL PLATE TOP VIEW                                                                                            
+#         Machine Origin                                     Machine Origin               Slot Calibration                                                                     
+#             (0,0)                                              (0,0)                        Position                                                        
+#                +------------------------------------+               +--------------------+                                                                      
+#                |   +------+   +------+   +------+   |               | Well          Well |                                                                            
+#                |   |      |   |      |   |      |   |               |  i1            A1  |                                                                                                
+#                |   |      |   |      |   |      |   |               |                    |                                                                        
+#                |   |  0   |   |  1   |   |  2   |   |               |                    |                                                                        
+#                |   |      |   |      |   |      |   |               |                    |                                                                        
+#                |   |      |   |      |   |      |   |               |                    |                                                                        
+#                |   +------+   +------+   +------+   | Tool Rack     |                    |                                                                        
+#                |   +------+   +------+   +------+   |               |                    |                                                                                            
+#                |   |      |   |      |   |      |   |               |                    |                                                                        
+#                |   |      |   |      |   |      |   |               |                    |                                                                        
+#                |   |  5   |   |  4   |   |  3   |   |               |                    |                                                                                            
+#   Power Supply |   |      |   |      |   |      |   |               |                    |                                                                                             
+#                |   |      |   |      |   |      |   |               | Well          Well |                                                                                            
+#                |   +------+   +------+   +------+   |               |  ij            Aj  |                                                                                            
+#                +------------------------------------+               +--------------------+           
+#                                                        
 
 class LabAutomationPlate(Plate):
     """Setup a lab automation plate with relevant labware."""
@@ -87,6 +67,7 @@ class LabAutomationPlate(Plate):
         max_row_letter = chr(ord('@')+row_count) # Labware rows are identified with letters
         
         # Find the machine coordinates by adding labware calibration points to the slot reference position. 
+        # The slot reference position is calibrated to be the corner closest to well A1. 
         a = [sum(x) for x in zip(slot['calibration_positions']["A1"], slot['origin'])]
         slot['calibration_positions']["A1"] = a
         b = [sum(x) for x in zip(slot['calibration_positions'][f"A{column_count}"], slot['origin'])]

@@ -238,7 +238,7 @@ class Machine:
         """Return (in XYZU order) a list of tuples specifying (min, max) axis limit"""
         if self._axis_limits is None:  # Starting from a fresh connection.
             try:
-                response = json.loads(self.gcode('M409 K"move.axes"'))["result"]
+                response = json.loads(self.send('M409 K"move.axes"'))["result"]
                 self._axis_limits = [] # Create a fresh list.
                 for axis_data in response:
                     axis_min = axis_data["min"]
