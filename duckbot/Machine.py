@@ -185,12 +185,11 @@ class Machine:
     def active_tool_index(self):
         """Return the index of the current tool."""
         if self._active_tool_index is None: # Starting from a fresh connection.
-            print("tool is None")
             try:
                 response = self.send("T")
                 # We get a string instead of -1 when there are no tools.
                 if response.startswith('No tool'):
-                    self.active_tool_index = -1
+                    return -1
                 # We get a string instead of the tool index.
                 elif response.startswith('Tool'):
                     # Recover from the string: 'Tool X is selected.'
@@ -469,6 +468,8 @@ class Machine:
 
         self.active_tool_index = tool_idx
         
+        return self.tool
+        
     def park_tool(self):
         """Deselect tool"""
         self.send("T-1")
@@ -477,7 +478,17 @@ class Machine:
     def get_position(self):
         """Get the current position, returns a dictionary with X/Y/Z/U/E/V keys"""
         # I've changed this; todo: check it all works
-        resp = self.send("M114")  
+#         resp = self.send("M114")
+        
+        # Sometimes we just get 'ok' back; need to query until we get the position
+        max_tries = 25
+        for i in range(max_tries):
+            resp = self.send("M114")
+            if "Count" not in resp:
+                continue
+            else:
+                break
+            
         positions = {}
         keyword = " Count " # this is the keyword hosts like e.g. pronterface search for to track position
         keyword_idx = resp.find(keyword)

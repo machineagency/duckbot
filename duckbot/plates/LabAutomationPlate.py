@@ -51,7 +51,6 @@ class LabAutomationPlate(Plate):
         # The sharps container is calibrated as slot index -1
         if self.slots[-1]:
             self.sharps_container = self.slots[-1]
-        
             
     def load_labware(self, slot_index, labware_name):
         """Load labware into a slot index."""
@@ -65,6 +64,7 @@ class LabAutomationPlate(Plate):
         
         slot = self.slots[slot_index]
         slot['labware'] = labware_name
+        slot['slot_index'] = slot_index
         for key, value in config_contents.items():
             slot[key] = value
         
@@ -95,8 +95,44 @@ class LabAutomationPlate(Plate):
         theta2 = math.asin((c[0] - b[0]) / labware_height)
         theta = (theta1 + theta2)/2
         slot['theta'] = theta
-
-        input(f"Load {labware_name} into slot {slot_index}. Press any key to continue.")
+        
+        # ToDo: do these well operations in a separate function
+        # Add position of all wells in labware
+        wells = {}
+        for i in range(1, column_count + 1):
+            for j in range(1, row_count + 1):
+                row_letter = self.row_index_to_letter(j)
+                well_id = f"{row_letter}{i}"
+                well_position = self.get_well_position(slot_index, well_id)
+                wells[well_id] = well_position
+        slot['wells'] = wells
+        
+        # Add rows
+        rows = {}
+        for i in range(1, row_count+1):
+            row_letter = self.row_index_to_letter(i)
+            rows[row_letter] = {}
+            for j in range(1, column_count + 1):
+                well_id = f"{row_letter}{j}"
+                well_position = self.get_well_position(slot_index, well_id)
+                rows[row_letter][well_id] = well_position
+        slot['rows'] = rows
+        
+        # Add columns
+        columns = {}
+        for j in range(1, column_count+1):
+            columns[j] = {}
+            for i in range(1, row_count + 1):
+                row_letter = self.row_index_to_letter(i)
+                well_id = f"{row_letter}{j}"
+                well_position = self.get_well_position(slot_index, well_id)
+                columns[j][well_id] = well_position
+        slot['columns'] = columns
+        
+        
+        input(f"Load {labware_name} into slot {slot_index}. Press enter to continue.")
+        
+        return slot
             
     def get_well_position(self, slot_index, well_id):
         """Return machine coordinates for a well id in a bed plate slot."""
@@ -109,7 +145,7 @@ class LabAutomationPlate(Plate):
         slot = self.slots[slot_index]
         
         if row <= 0 or column <= 0 or row > slot['row_count'] or column > slot["column_count"]:
-            raise PlateStateError("Error: Well ID is out of range for this labware.")
+            raise PlateStateError(f"Error: Well ID ({row},{column}) is out of range for this labware.")
         
         # Translate and rotate from A1 to the desired well.
         row_index = row - 1
@@ -129,7 +165,8 @@ class LabAutomationPlate(Plate):
         
         
         # ToDo: return just the rotated values, assuming the work
-        return [x_nominal, y_nominal, x_rotated, y_rotated]
+        return [x_nominal, y_nominal]
+#         return [x_nominal, y_nominal, x_rotated, y_rotated]
             
     def wells(self, slot_index):
         """Return a list of all the wells for this labware."""
@@ -138,24 +175,23 @@ class LabAutomationPlate(Plate):
         slot = self.slots[slot_index]
         if not slot['labware']:
             raise PlateStateError(f"Error: No labware loaded into slot {slot_index}")
-        labware = slot['labware']
         
         # Return first down a row (A1, B1, ...) then column
         wells = []
-        for i in range(labware.column_count):
-            for j in range(labware.row_count):
+        for i in range(1, slot['column_count'] + 1):
+            for j in range(1, slot['row_count'] + 1):
                 row_letter = self.row_index_to_letter(j)
-                well_position = get_well_position(slot_index, f"{row_letter}{j}")
+                well_position = self.get_well_position(slot_index, f"{row_letter}{j}")
                 wells.append(well_position)
         
         return wells
         
-    def row_index_to_letter(row_index):
-        """Convert a row number (0-indexed) to a letter"""
+    def row_index_to_letter(self, row_index):
+        """Convert a row number (starting at 1) to a letter"""
         return chr(ord('@')+row_index) 
     
     
-    def row_letter_to_index(row_letter):
+    def row_letter_to_index(self, row_letter):
         """Convert a row letter (A, B, C...) to a 0-indexed number"""
         return ord(row_letter.upper()) - 65
        
