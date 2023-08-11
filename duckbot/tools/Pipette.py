@@ -13,6 +13,7 @@ class Pipette(Tool):
         self.max_range = None
         self.eject_start = None
         self.mm_to_ul = None
+        self.available_tips = None
         
         self.load_config(details)
         
@@ -47,10 +48,17 @@ class Pipette(Tool):
         """Pick up a pipette tip."""
         if self.has_tip:
             raise ToolStateError("Error: Pipette already equipped with a tip.")
+            
+        # The first time we pickup a tip, start to keep track of available tips on the rack
+        # N.B. We assume the rack is full to start
+        if self.available_tips is None:
+            self.available_tips = iter(tip_rack["wells"])
         
+        well = next(self.available_tips)
         tip_rack_slot = tip_rack['slot_index']
-        well_pos = self._machine.plate.get_well_position(tip_rack_slot, position)
+        well_pos = self._machine.plate.get_well_position(tip_rack_slot, well)
         self._machine.move_to(x=well_pos[0], y=well_pos[1])
+        
         #ToDo: Implement pickup
         self._machine.move_to(z=46)
         self._machine.move_to(z=125)
@@ -70,7 +78,6 @@ class Pipette(Tool):
         self._machine.move_to(v=420) # todo: config file
         self.aspirate_prime()
         self._machine.move_to(z=125)
-        print('I ejected a tip!')
         self.has_tip = False
     
     def aspirate(self, vol): 
@@ -103,6 +110,7 @@ class Pipette(Tool):
         safe_height = 70
         aspirate_height = 47
         dispense_height = 60
+        
         # Our destination might be an individual well, or a dictionary of wells
         if isinstance(destination, dict):
             for well in destination:
@@ -120,9 +128,9 @@ class Pipette(Tool):
                 self.blowout()
                 if mix_after is not None:
                     number_of_mixes = mix_after[0]
-                    volume = mix_after[1]
+                    mix_volume = mix_after[1]
                     m.move_to(z=aspirate_height)
-                    self.mix(number_of_mixes, volume)
+                    self.mix(number_of_mixes, mix_volume)
                     m.move_to(z=dispense_height)
                     self.blowout()
                 m.move_to(z=safe_height)
@@ -140,9 +148,9 @@ class Pipette(Tool):
             self.blowout()
             if mix_after is not None:
                     number_of_mixes = mix_after[0]
-                    volume = mix_after[1]
+                    mix_volume = mix_after[1]
                     m.move_to(z=aspirate_height)
-                    self.mix(number_of_mixes, volume)
+                    self.mix(number_of_mixes, mix_volume)
                     m.move_to(z=dispense_height)
                     self.blowout()
             m.move_to(z=safe_height)
