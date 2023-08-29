@@ -162,7 +162,7 @@ class Pipette(Tool):
             self.aspirate(volume)
             self.dispense(volume)
             
-    def blowout(self, volume = 30):
+    def blowout(self, volume = 40):
         self.dispense(volume)
         self.aspirate_prime()
         
