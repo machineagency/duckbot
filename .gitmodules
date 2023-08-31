@@ -1,0 +1,3 @@
+[submodule "science_jubilee"]
+	path = science_jubilee
+	url = https://github.com/machineagency/science_jubilee.git
