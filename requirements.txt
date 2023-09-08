@@ -1,2 +1,12 @@
 pandas
 ipywidgets
+python-dateutil
+scipy
+scikit-image>=0.19
+scikit-learn
+dask
+dask-jobqueue
+xarray>=2022.11.0
+statsmodels
+altair
+vl-convert-python
