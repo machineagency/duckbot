@@ -12,6 +12,7 @@ _For more details on buidling a Jubilee for lab automation, check out our [scien
   - Create a virtual environment named `.venv`: `python3 -m venv .venv`
   - Activate the virtual environment: `source .venv/bin/activate` 
   - You should now see `(.venv)` to the left of your command line prompt! (If you wish to leave the virtual environment, type `deactivate` from any directory)
+- Make sure you're using the latest version of pip: `python3 -m pip install --upgrade pip`
 - Install the science_jubilee package: `python3 -m pip install -e ./science_jubilee`
 - Additional requirements have been separated out into two files to avoid installation issues:
   - First install required packages with `python3 -m pip install -r requirements.txt`
