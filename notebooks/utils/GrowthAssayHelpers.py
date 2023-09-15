@@ -14,7 +14,7 @@ import cv2
 from plantcv import plantcv as pcv
 from science_jubilee.labware.Labware import Labware
 
-## Notebook 1 Helpers
+## Notebook 0 Helpers
 def assign_plates_and_wells(name, genotypes, media, reps, *labware):
     """Randomize replicates of duckweed genotype + media across given labware."""
     experiment_list = []
@@ -108,6 +108,46 @@ def visualize_plate_setup(experimental_config, *labware):
                 ax_n.text(0.1, 0.9, well, horizontalalignment='center', verticalalignment='center', transform=ax_n.transAxes, weight='bold')
         fig.legend(handles = leg_patches, labels = media_list, loc = 'upper left')
     
+# Notebook 1 Helpers
+def dispense_media_to_wells(m, syringe, df):
+    """Group experiment setup by media and dispense using syringe."""
+    # Map the plates in the setup file to the labware loaded on the machine
+    setup_plates = list(set(df['plate']))
+    plate_types = []
+    for plate_id in setup_plates:
+        plate_type = df.query('plate==@plate_id')['plate_type']
+        plate_types.append(plate_type)
+    plate_setup_id_type_pairs = sorted(list(zip(setup_plates, plate_type)))
+    setup_to_machine_map = {}
+    index = 0
+    for slot in m.deck.slots:
+        if m.deck.slots[slot].has_labware:
+            if m.deck.slots[slot].labware.load_name == plate_setup_id_type_pairs[index][1]:
+                setup_to_machine_map[plate_setup_id_type_pairs[index][0]] = m.deck.slots[slot].labware
+                index += 1
+    
+    # Group experimental setup by media and transfer
+    media_groups = df.groupby("media")
+    for media in media_groups.groups:
+        destination_wells = []
+        df_indices = list(media_groups.groups[media])
+        for df_index in df_indices: # find plate & well from df
+            plate_id = df.iloc[df_index].plate
+            well_id = df.iloc[df_index].well
+            well = setup_to_machine_map[plate_id][well_id]
+            destination_wells.append(well)
+        m.move_to(x=0,y=0,z=100) # Drop bed down to swap media
+        print(f"Please ensure {media} is available in the machine before continuing.")
+        print("Change syringe and/or needle if desired")
+        while True:
+            value = input("Enter 'YES' to confirm that the correct media is in position")
+            if value != "YES":
+                print("Please confirm")
+            else:
+                break
+        reservoir = m.deck.slots['0'].labware
+        syringe.transfer(vol = 1.5, source =reservoir["A1"], destination = destination_wells)
+        
     
 
 ######### Data Analysis Helpers
