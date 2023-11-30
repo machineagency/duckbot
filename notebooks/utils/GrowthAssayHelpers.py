@@ -2,12 +2,14 @@ import os
 import random
 from pathlib import Path
 import json
+import time
 import re
 import warnings
 import pandas as pd
 import numpy as np
 import numpy as np
 import datetime
+from datetime import date
 from matplotlib import pyplot as plt
 import matplotlib.patches as mpatches
 import cv2
@@ -148,7 +150,202 @@ def dispense_media_to_wells(m, syringe, df):
         reservoir = m.deck.slots['0'].labware
         syringe.transfer(vol = 1.5, source =reservoir["A1"], destination = destination_wells)
         
+def inoculation_loop_transfer(m, loop, df):
+    # Map the plates in the setup file to the labware loaded on the machine
+    setup_plates = list(set(df['plate']))
+    plate_types = []
+    for plate_id in setup_plates:
+        plate_type = df.query('plate==@plate_id')['plate_type']
+        plate_types.append(plate_type)
+    plate_setup_id_type_pairs = sorted(list(zip(setup_plates, plate_type)))
+    setup_to_machine_map = {}
+    index = 0
+    for slot in m.deck.slots:
+        if m.deck.slots[slot].has_labware:
+            if m.deck.slots[slot].labware.load_name == plate_setup_id_type_pairs[index][1]:
+                setup_to_machine_map[plate_setup_id_type_pairs[index][0]] = m.deck.slots[slot].labware
+                index += 1
     
+    # group experimental setup by duckweed genotype and transfer
+    duckweed_groups = df.groupby("genotype")
+    for genotype in duckweed_groups.groups:
+        destination_wells = []
+        df_indices = list(duckweed_groups.groups[genotype])
+        for df_index in df_indices: # find plate & well from df
+            plate_id = df.iloc[df_index].plate
+            well_id = df.iloc[df_index].well
+            well = setup_to_machine_map[plate_id][well_id]
+            destination_wells.append(well)
+            
+        m.move_to(x=0,y=0,z=100) # Drop bed down to swap reservoit
+        print(f"Please ensure {genotype} is available in the machine before continuing.")
+        while True:
+            value = input("Enter 'YES' to confirm that the correct reservoir is in position")
+            if value != "YES":
+                print("Please confirm")
+            else:
+                break
+        reservoir = m.deck.slots['0'].labware
+        loop.transfer(source =reservoir["A1"], destination = destination_wells, randomize_pickup = True)
+
+def well_check_circle_crop(img, minR = 350, maxR = 500):
+    # Looks for the outline of the well that the duckweed are in and crops to that outline. 
+    img1 = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    blur = cv2.medianBlur(gray, 5)
+    ret, thresh = cv2.threshold(gray, 100, 150, cv2.THRESH_BINARY)
+    # Create mask
+    height, width, nslice = img.shape
+    mask = np.zeros((height,width), np.uint8)
+    cimg=cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    edges = cv2.Canny(gray, 25, 100)
+    gain = 1
+    for g in np.arange(gain, 10, 0.1):
+        # find the right gain to find a single circle
+        circles = cv2.HoughCircles(edges,
+                                   cv2.HOUGH_GRADIENT,
+                                   g,
+                                   minDist=100,
+                                   param1=100,
+                                   param2=100,
+                                   minRadius=minR,
+                                   maxRadius=500
+                                   )
+        if circles is None:
+            continue
+        numCircles = circles[0,:].shape[0]
+        if numCircles == 1:
+            break
+
+    if circles is not None:
+        i = circles[0][0]                
+        # Draw on mask
+        center = (int(i[0]),int(i[1]))
+        radius = int(i[2])
+        cv2.circle(mask,center,radius,(255,255,255),thickness=-1)
+        # Copy that image using that mask
+        masked_data = cv2.bitwise_and(img1, img1, mask=mask)
+        # Apply Threshold
+        _,thresh = cv2.threshold(mask,1,255,cv2.THRESH_BINARY)
+        # Find Contour
+        contours = cv2.findContours(thresh,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+        x,y,w,h = cv2.boundingRect(contours[0][0])
+        #   Crop masked_data
+        cropped_img = masked_data[y:y+h,x:x+w]
+    else:
+        cropped_img = "Error"
+    return np.ascontiguousarray(cropped_img), i # i is the circle data (center_x, center_y, radius)
+
+def identify_fronds(img):
+    s = pcv.rgb2gray_hsv(img, 's')
+    s_thresh = pcv.threshold.binary(s, 120, 'light')
+    objects, hierarchy = cv2.findContours(s_thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)[-2:]
+    # Cast tuple objects as a list
+    objects = list(objects)
+    count = 0
+    for i, cnt in enumerate(objects):
+        area = cv2.contourArea(cnt)
+        perimeter = cv2.arcLength(cnt,True)
+        if perimeter > 100 and area > 500: # can add stricter filters here as necessary
+#             print(f"perimeter: {perimeter}\n area: {area}")
+            count += 1
+            # relevant for showing images; TODO: make this an function option
+#             M = cv2.moments(cnt)
+#             cx = int(M['m10']/M['m00'])
+#             cy = int(M['m01']/M['m00'])
+#             cv2.circle(crop, (cx, cy), 10, (255,0,0), -1)
+#             cv2.drawContours(crop, objects, i, (255, 102, 255), 2, lineType=8, hierarchy=hierarchy)
+    
+    return count
+
+def check_wells(m, camera, df):
+    # Map the plates in the setup file to the labware loaded on the machine
+    setup_plates = list(set(df['plate']))
+    plate_types = []
+    for plate_id in setup_plates:
+        plate_type = df.query('plate==@plate_id')['plate_type']
+        plate_types.append(plate_type)
+    plate_setup_id_type_pairs = sorted(list(zip(setup_plates, plate_type)))
+    setup_to_machine_map = {}
+    index = 0
+    for slot in m.deck.slots:
+        if m.deck.slots[slot].has_labware:
+            if m.deck.slots[slot].labware.load_name == plate_setup_id_type_pairs[index][1]:
+                setup_to_machine_map[plate_setup_id_type_pairs[index][0]] = m.deck.slots[slot].labware
+                index += 1
+    
+    has_fronds = []
+    # group experimental setup by plate and check each well
+    plate_groups = df.groupby("plate")
+    destination_wells = []
+    for plate in plate_groups.groups:
+        df_indices = list(plate_groups.groups[plate])
+        for df_index in df_indices: # find plate & well from df
+            plate_id = df.iloc[df_index].plate
+            well_id = df.iloc[df_index].well
+            well = setup_to_machine_map[plate_id][well_id]
+            destination_wells.append(well)
+    
+    for well in destination_wells:
+        f = camera.get_well_image(well=well)
+        crop, crop_data = well_check_circle_crop(f)
+        frond_check = identify_fronds(crop)
+        if frond_check:
+            has_fronds.append(True)
+        else:
+            print(f"Well {well.name} needs fronds")
+            has_fronds.append(False)
+        time.sleep(0.1)
+    # update the df with the a new column
+    df['hasFronds'] = has_fronds
+                                 
+def fill_empty_wells(m, loop, df):
+    empty = df.loc[df['hasFronds'] == False]
+    inoculation_loop_transfer(m, loop, empty)
+    
+    
+# Notebook 2 Helpers
+def image_plates(m, camera, df, data_dir, expt_name):
+    # Map the plates in the setup file to the labware loaded on the machine
+    setup_plates = list(set(df['plate']))
+    plate_types = []
+    for plate_id in setup_plates:
+        plate_type = df.query('plate==@plate_id')['plate_type']
+        plate_types.append(plate_type)
+    plate_setup_id_type_pairs = sorted(list(zip(setup_plates, plate_type)))
+    setup_to_machine_map = {}
+    index = 0
+    for slot in m.deck.slots:
+        if m.deck.slots[slot].has_labware:
+            if m.deck.slots[slot].labware.load_name == plate_setup_id_type_pairs[index][1]:
+                setup_to_machine_map[plate_setup_id_type_pairs[index][0]] = m.deck.slots[slot].labware
+                index += 1
+                
+    # group experimental setup by plate and image each well
+    plate_groups = df.groupby("plate")
+    destination_wells = []
+    for plate in plate_groups.groups:
+        df_indices = list(plate_groups.groups[plate])
+        for df_index in df_indices: # find plate & well from df
+            plate_id = df.iloc[df_index].plate
+            well_id = df.iloc[df_index].well
+            well = setup_to_machine_map[plate_id][well_id]
+            destination_wells.append([plate, well])
+    
+    images = []
+    print("Imaging every well")
+    for plate_well in destination_wells:
+        plate = plate_well[0]
+        well = plate_well[1]
+        f = camera.get_well_image(well=well)
+        f_rgb = cv2.cvtColor(f, cv2.COLOR_BGR2RGB)
+        cv2.imwrite(f'{data_dir}/{expt_name}_{plate}_well{well.name}_{date.today()}.jpg', f_rgb)
+        images.append(f)
+        time.sleep(0.1)
+
+def show_image_grid():
+    return
+         
 
 ######### Data Analysis Helpers
 def make_df_with_images(image_dir_path, plate_setup_info):
