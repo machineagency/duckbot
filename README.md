@@ -1,7 +1,7 @@
 # The Duckbot: A system for automated imaging and manipulation of duckweed
 This repository hosts files to build and operate a Duckbot, aka a [Jubilee](https://jubilee3d.com/index.php?title=Main_Page) outfitted for use by plant biologists.
 
-_For more details on buidling a Jubilee for lab automation, check out our [science_jubilee](https://github.com/machineagency/science_jubilee/) repository and its [wiki](https://github.com/machineagency/science_jubilee/wiki)!_
+_For more details on buidling a Jubilee for lab automation, check out our [science_jubilee](https://github.com/machineagency/science_jubilee/) repository and its [documentation](https://github.com/machineagency/science_jubilee/)!_
 
 ## Quickstart Info
 ### Installation
